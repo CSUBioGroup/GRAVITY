@@ -1,0 +1,74 @@
+[build-system]
+requires = [
+  "setuptools>=59.6,<68; python_version<'3.8'",
+  "setuptools>=61; python_version>='3.8'",
+  "wheel>=0.36,<0.41; python_version<'3.8'",
+  "wheel>=0.36; python_version>='3.8'"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gravity"
+version = "0.1.0"
+description = "GRAVITY: Dynamic gene regulatory network-enhanced RNA velocity modeling for trajectory inference and biological discovery"
+readme = "gravity/README.md"
+requires-python = ">=3.7"
+authors = [{name = "GRAVITY Contributors"}]
+license = {text = "MIT"}
+keywords = ["single-cell", "rna velocity", "pytorch", "bioinformatics"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Science/Research"
+]
+
+# —— 核心依赖：为 Python 3.7 提供兼容上限；>=3.8 使用较新版本 ——
+dependencies = [
+  # PyTorch & Lightning
+  "torch>=1.10,<1.14; python_version<'3.8'",
+  "torch>=2.0; python_version>='3.8'",
+  "pytorch-lightning>=1.6,<1.8; python_version<'3.8'",
+  "pytorch-lightning>=2.0; python_version>='3.8'",
+
+  # 生态（3.7 需要老版本）
+  "numpy>=1.20,<1.24; python_version<'3.8'",
+  "numpy>=1.24; python_version>='3.8'",
+  "pandas>=1.1,<1.4; python_version<'3.8'",
+  "pandas>=1.5; python_version>='3.8'",
+  "scipy>=1.7,<1.9; python_version<'3.8'",
+  "scipy>=1.9; python_version>='3.8'",
+  "scikit-learn>=1.0,<1.2; python_version<'3.8'",
+  "scikit-learn>=1.2; python_version>='3.8'",
+
+  # scanpy / anndata（3.7 用旧版）
+  "scanpy>=1.8,<1.9; python_version<'3.8'",
+  "scanpy>=1.9; python_version>='3.8'",
+  "anndata>=0.7,<0.9; python_version<'3.8'",
+  "anndata>=0.9; python_version>='3.8'",
+
+  # 可视化
+  "matplotlib>=3.5,<3.6; python_version<'3.8'",
+  "matplotlib>=3.7; python_version>='3.8'",
+  "bezier",  # 你当前 plotting 用到了，作为硬依赖加入
+
+  # 其它
+  "einops",
+  "tqdm"
+]
+
+[project.optional-dependencies]
+plots = [
+  # UMAP / seaborn 在 3.7 环境下也需要钉版本
+  "umap-learn>=0.5,<0.6; python_version<'3.8'",
+  "umap-learn>=0.5; python_version>='3.8'",
+  "seaborn>=0.11,<0.12; python_version<'3.8'",
+  "seaborn>=0.12; python_version>='3.8'"
+]
+
+[tool.setuptools.packages.find]
+include = ["gravity", "gravity.*"]

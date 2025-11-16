@@ -159,8 +159,7 @@ Troubleshooting
 Citing
 ------
 If this package contributes to your research, please cite the GRAVITY paper,
-“GRAVITY: Dynamic gene regulatory network-enhanced RNA velocity modeling for trajectory inference and biological discovery.” Include version, environment details, and key configuration options in
-your methods section when possible.
+“GRAVITY: Dynamic gene regulatory network-enhanced RNA velocity modeling for trajectory inference and biological discovery.” Include version, environment details, and key configuration options in your methods section when possible.
 
 Contributing & license
 ----------------------

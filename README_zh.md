@@ -12,15 +12,20 @@ GRAVITY：Dynamic gene regulatory network-enhanced RNA velocity modeling for tra
 
 安装
 ----
-建议使用 Python 3.9+ 并创建虚拟环境：
+建议使用 Python 3.10 或 3.11 并创建虚拟环境：
 
 ```bash
-python -m venv .venv
+python3.10 -m venv .venv
 source .venv/bin/activate
 pip install -e .
 ```
 
-如需 GPU，请先安装对应的 `torch` CUDA 版本，然后执行 `pip install -e .`。
+如需 GPU，请先安装对应的 `torch` CUDA 版本，然后执行 `pip install -e .`。例如 CUDA 11.7 环境：
+
+```bash
+pip install --index-url https://download.pytorch.org/whl/cu117 "torch==2.0.1+cu117"
+pip install -e .
+```
 
 快速开始（端到端）
 -----------------

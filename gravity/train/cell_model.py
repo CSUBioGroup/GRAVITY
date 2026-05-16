@@ -415,8 +415,8 @@ class FullModelCellWise(pl.LightningModule):
 
             X = self.builder.to_csr(n_rows=len(self.obs_names))
             adata = AnnData(X)
-            adata.obs_names = pd.Index([str(x) for x in self.obs_names], dtype="string")
-            adata.var_names = pd.Index([str(v) for v in self.scorer.keys], dtype="string")
+            adata.obs_names = pd.Index([str(x) for x in self.obs_names], dtype=object)
+            adata.var_names = pd.Index([str(v) for v in self.scorer.keys], dtype=object)
             adata.obs["cell_type"] = pd.Categorical([str(x) for x in self.obs_celltype])
 
             out_h5ad = os.path.join(self.output_network_path, "attention_TF_scores_with_types.h5ad")

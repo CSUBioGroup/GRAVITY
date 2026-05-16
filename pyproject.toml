@@ -12,62 +12,42 @@ name = "gravity"
 version = "0.1.0"
 description = "GRAVITY: Dynamic gene regulatory network-enhanced RNA velocity modeling for trajectory inference and biological discovery"
 readme = "gravity/README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10,<3.12"
 authors = [{name = "GRAVITY Contributors"}]
 license = {text = "MIT"}
 keywords = ["single-cell", "rna velocity", "pytorch", "bioinformatics"]
 classifiers = [
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "License :: OSI Approved :: MIT License",
   "Intended Audience :: Science/Research"
 ]
 
-# —— 核心依赖：为 Python 3.7 提供兼容上限；>=3.8 使用较新版本 ——
+# Keep upper bounds tight enough that pip does not silently upgrade a working
+# CUDA/PyTorch stack into an incompatible major dependency set.
 dependencies = [
-  # PyTorch & Lightning
-  "torch>=1.10,<1.14; python_version<'3.8'",
-  "torch>=2.0; python_version>='3.8'",
-  "pytorch-lightning>=1.6,<1.8; python_version<'3.8'",
-  "pytorch-lightning>=2.0; python_version>='3.8'",
-
-  # 生态（3.7 需要老版本）
-  "numpy>=1.20,<1.24; python_version<'3.8'",
-  "numpy>=1.24; python_version>='3.8'",
-  "pandas>=1.1,<1.4; python_version<'3.8'",
-  "pandas>=1.5; python_version>='3.8'",
-  "scipy>=1.7,<1.9; python_version<'3.8'",
-  "scipy>=1.9; python_version>='3.8'",
-  "scikit-learn>=1.0,<1.2; python_version<'3.8'",
-  "scikit-learn>=1.2; python_version>='3.8'",
-
-  # scanpy / anndata（3.7 用旧版）
-  "scanpy>=1.8,<1.9; python_version<'3.8'",
-  "scanpy>=1.9; python_version>='3.8'",
-  "anndata>=0.7,<0.9; python_version<'3.8'",
-  "anndata>=0.9; python_version>='3.8'",
-
-  # 可视化
-  "matplotlib>=3.5,<3.6; python_version<'3.8'",
-  "matplotlib>=3.7; python_version>='3.8'",
-  "bezier",  # 你当前 plotting 用到了，作为硬依赖加入
-
-  # 其它
-  "einops",
-  "tqdm"
+  "torch>=2.0,<2.1",
+  "pytorch-lightning>=2.0,<2.1",
+  "torchmetrics>=0.11,<1.0",
+  "setuptools>=61,<81",
+  "numpy>=1.24,<2.0",
+  "pandas>=1.5,<2.2",
+  "scipy>=1.9,<1.12",
+  "scikit-learn>=1.2,<1.5",
+  "scanpy>=1.9,<1.10",
+  "anndata>=0.9,<0.11",
+  "h5py>=3.8,<3.12",
+  "matplotlib>=3.7,<3.9",
+  "bezier>=2023.7,<2025",
+  "einops>=0.6,<0.8",
+  "tqdm>=4.64,<5"
 ]
 
 [project.optional-dependencies]
 plots = [
-  # UMAP / seaborn 在 3.7 环境下也需要钉版本
-  "umap-learn>=0.5,<0.6; python_version<'3.8'",
-  "umap-learn>=0.5; python_version>='3.8'",
-  "seaborn>=0.11,<0.12; python_version<'3.8'",
-  "seaborn>=0.12; python_version>='3.8'"
+  "umap-learn>=0.5,<0.6",
+  "seaborn>=0.12,<0.14"
 ]
 
 [tool.setuptools.packages.find]

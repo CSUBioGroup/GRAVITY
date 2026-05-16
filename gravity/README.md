@@ -20,16 +20,22 @@ Key features
 
 Installation
 ------------
-It is recommended to use Python 3.9+ and a fresh virtual environment.
+It is recommended to use Python 3.10 or 3.11 and a fresh virtual environment.
 
 ```bash
-python -m venv .venv
+python3.10 -m venv .venv
 source .venv/bin/activate
 pip install -e .
 ```
 
 If you need to control dependency versions manually, refer to `pyproject.toml`.
 For GPU, install an appropriate `torch` wheel first, then run `pip install -e .`.
+For example, CUDA 11.7 systems can use:
+
+```bash
+pip install --index-url https://download.pytorch.org/whl/cu117 "torch==2.0.1+cu117"
+pip install -e .
+```
 
 Quickstart (end‑to‑end)
 -----------------------

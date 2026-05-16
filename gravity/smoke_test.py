@@ -10,8 +10,8 @@ from pprint import pprint
 from gravity import PipelineConfig, run_pipeline
 
 
-RAW_COUNTS = "/media/asus/data16t/miaozy/PancreaticEndocrinogenesis_cell_type_u_s.csv"
-PRIOR_NET = "/home/sda1/miaozy/cellDancer-main/prior_data/network_mouse.zip"
+RAW_COUNTS = "data/pancreas_long.csv"
+PRIOR_NET = "prior_data/network_mouse.zip"
 WORKDIR = "gravity_outputs_new"
 GENE_LIST = ["RFX6", "RBFOX3"]
 

@@ -2,7 +2,9 @@
 
 Welcome to the documentation site for **GRAVITY predicts RNA velocity and regulatory rewiring by dynamic regulatory mechanism-enhanced deep learning**.
 
-These docs cover project goals, pipeline concepts, tutorials, and API usage so you can run GRAVITY for RNA velocity inference, dynamic regulatory rewiring analysis, attention-based regulator summaries, and downstream velocity visualization.
+These docs cover project goals, pipeline concepts, tutorials, and API usage so you can run GRAVITY for RNA velocity inference, dynamic regulatory rewiring analysis, attention-based regulator summaries, and downstream velocity visualization. GRAVITY uses a cellDancer-style long-format count table as its user-facing input format, then builds the internal wide `combine.csv` used by the two-stage model.
+
+![GRAVITY method overview](assets/gravity_method_overview.png)
 
 ```{toctree}
 :maxdepth: 2
@@ -16,6 +18,7 @@ api/index
 
 - Clone the repository and follow the installation steps in the README.
 - Create a Python 3.10 or 3.11 virtual environment, then install the package in editable mode: `pip install -e .[plots]`.
+- Place the pancreas example CSV at `data/PancreaticEndocrinogenesis_cell_type_u_s.csv`, or set `GRAVITY_RAW_COUNTS` to another compatible cellDancer-style CSV.
 - Run one of the smoke tests under `gravity/smoke_test_*.py` to ensure your environment is GPU-ready.
 
 ## Tutorials

@@ -17,7 +17,7 @@ PRIOR_NET = os.environ.get("GRAVITY_PRIOR_NET", "prior_data/network_mouse.zip")
 WORKDIR = os.environ.get("GRAVITY_WORKDIR", "gravity_outputs_pancreas")
 GENE_LIST = [
     gene.strip()
-    for gene in os.environ.get("GRAVITY_PLOT_GENES", "RFX6,RBFOX3").split(",")
+    for gene in os.environ.get("GRAVITY_PLOT_GENES", "GCG,INS2").split(",")
     if gene.strip()
 ]
 BATCH_SIZE = int(os.environ.get("GRAVITY_BATCH_SIZE", "16"))

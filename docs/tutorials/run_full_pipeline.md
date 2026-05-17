@@ -1,23 +1,26 @@
 # Run the GRAVITY Pipeline
 
-Once your CSV is ready, run the two-stage pipeline via `PipelineConfig` and `run_pipeline`.
+Once your cellDancer-style CSV is ready, run the two-stage pipeline via
+`PipelineConfig` and `run_pipeline`. The example below uses the pancreas
+reference layout used by the smoke test.
 
 ```python
 from gravity import PipelineConfig, run_pipeline
 
 cfg = PipelineConfig(
-    raw_counts="path/to/your_counts.csv",
-    workdir="gravity_outputs",
+    raw_counts="data/PancreaticEndocrinogenesis_cell_type_u_s.csv",
+    workdir="gravity_outputs_pancreas",
     prior_network="prior_data/network_mouse.zip",
+    gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt",
     accelerator="gpu",
     devices=1,
     batch_size=16,
     stage1_lr=1e-6,
     stage2_lr=1e-4,
     make_plot=True,
-    plot_genes=["Rfx6", "Rbfox3"],
+    plot_genes=["GCG", "INS2"],
     stage1_epochs=6,
-    stage2_epochs=6,
+    stage2_epochs=4,
 )
 outputs = run_pipeline(cfg)
 print(outputs)

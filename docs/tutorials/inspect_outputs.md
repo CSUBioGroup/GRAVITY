@@ -14,7 +14,7 @@ summaries.
 from gravity.analysis.importance import rank_tf_scores
 
 tf_summary, tf_plots = rank_tf_scores(
-    attention_h5ad="gravity_outputs/attentions/attention_TF_scores_with_types.h5ad",
+    attention_h5ad="gravity_outputs_pancreas/attentions/attention_TF_scores_with_types.h5ad",
     groupby="cell_type",
     method="wilcoxon",
     n_genes=30,
@@ -28,13 +28,13 @@ print(tf_summary.head())
 from gravity.plotting.velocity import plot_velocity_cell, plot_velocity_gene
 
 plot_velocity_cell(
-    stage2_csv="gravity_outputs/stage2.csv",
-    output_path="gravity_outputs/velocity_cell.png",
+    stage2_csv="gravity_outputs_pancreas/stage2.csv",
+    output_path="gravity_outputs_pancreas/velocity_cell.png",
 )
 plot_velocity_gene(
-    stage2_csv="gravity_outputs/stage2.csv",
-    gene="GCG",
-    output_path="gravity_outputs/velocity_gene_gcg.png",
+    stage2_csv="gravity_outputs_pancreas/stage2.csv",
+    gene="INS2",
+    output_path="gravity_outputs_pancreas/velocity_gene_ins2.png",
 )
 ```
 

@@ -34,6 +34,14 @@ Head over to the [Tutorials](tutorials/index.md) section for:
 
 The [API Reference](api/index.md) lists major modules (`gravity.pipeline`, `gravity.train`, `gravity.tools`, etc.) with autodoc-generated signatures so you can quickly locate configuration options.
 
+## Development Transparency
+
+Codex was used as an engineering assistant to help reorganize this repository
+into a reusable tool package, update documentation, and run implementation-level
+checks. The GRAVITY model design, biological analysis strategy, and computational
+methodology were developed by the authors; tool-assisted changes were reviewed
+and tested by the authors before release.
+
 ## Contributing
 
 If you improve the docs, please keep Markdown concise and link code-first examples back to the repository so they stay in sync with the source.

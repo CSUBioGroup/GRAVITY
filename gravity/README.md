@@ -227,6 +227,14 @@ Troubleshooting
 - Optional deps missing (e.g., SciPy): plotting/sampling may disable gracefully.
 - Verbosity: use `from gravity.utils import log_verbose` or project‑level toggles.
 
+Development transparency
+------------------------
+Codex was used as an engineering assistant to help reorganize this repository
+into a reusable tool package, update documentation, and run implementation-level
+checks. The GRAVITY model design, biological analysis strategy, and computational
+methodology were developed by the authors; tool-assisted changes were reviewed
+and tested by the authors before release.
+
 Citing
 ------
 If this package contributes to your research, please cite the GRAVITY paper:

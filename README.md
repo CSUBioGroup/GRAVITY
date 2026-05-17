@@ -8,10 +8,10 @@ network modeling by jointly learning cell-state transitions, gene-specific
 transcriptional kinetics, and regulatory rewiring from unspliced/spliced counts,
 cell embeddings, and a prior gene regulatory network.
 
-This repository provides a research-oriented Python implementation of the
-GRAVITY workflow. The pipeline first optimizes cell-level velocity and future
-cell positions, then refines gene-level kinetic parameters and exports
-attention-based regulatory summaries for downstream analysis.
+The Python implementation runs the GRAVITY workflow end to end. The pipeline
+first optimizes cell-level velocity and future cell positions, then refines
+gene-level kinetic parameters and exports attention-based regulatory summaries
+for downstream analysis.
 
 Method overview
 ---------------
@@ -83,10 +83,9 @@ sensitive. For reference-style runs, start with `stage1_lr < 1e-5` and tune
 
 Preparing CSV from AnnData (.h5ad)
 ----------------------------------
-GRAVITY consumes the same cellDancer-style long-format storage layout used by
-the original experiments: one row per cell-gene pair with spliced and
-unspliced counts plus cell metadata. If your dataset starts as an AnnData
-object, convert it once:
+GRAVITY consumes a cellDancer-style long-format storage layout: one row per
+cell-gene pair with spliced and unspliced counts plus cell metadata. If your
+dataset starts as an AnnData object, convert it once:
 
 ```python
 from gravity import export_intermediate_from_h5ad

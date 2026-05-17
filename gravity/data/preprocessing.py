@@ -1,4 +1,4 @@
-"""Dataset builders mirroring the original GRAVITY training scripts."""
+"""Data preprocessing utilities for GRAVITY training stages."""
 
 from __future__ import annotations
 

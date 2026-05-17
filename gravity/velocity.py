@@ -1,4 +1,4 @@
-"""Visualization and velocity helpers packaged for GRAVITY (legacy behavior)."""
+"""Cell velocity projection utilities for GRAVITY outputs."""
 
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ def retain_top_1_percent(matrix: np.ndarray) -> np.ndarray:
 
 
 # ----------------------------
-# Sampling (legacy strategy)
+# Sampling strategy
 # ----------------------------
 def _gaussian_kernel(X: np.ndarray, mu: float = 0.0, sigma: float = 1.0) -> np.ndarray:
     return np.exp(-(X - mu) ** 2 / (2.0 * sigma ** 2)) / (np.sqrt(2.0 * np.pi) * sigma)
@@ -62,9 +62,9 @@ def sampling_neighbors(points: np.ndarray,
                        step: Tuple[int, int] = (30, 30),
                        percentile: float = 25.0,
                        seed: int = 10) -> np.ndarray:
-    """Legacy sampling:
+    """Sample representative cells from a noisy embedding grid.
       1) Regular grid + N(0,0.15) noise (fixed seed)
-      2) For each grid anchor, pick nearest original point → unique indices
+      2) For each grid anchor, pick the nearest observed point → unique indices
       3) Second KNN on candidates; select by Gaussian-kernel density percentile
     """
     if points.shape[0] == 0:
@@ -94,7 +94,7 @@ def sampling_neighbors(points: np.ndarray,
     dist1, ixs1 = nn.kneighbors(grid_coords, neighbors)  # distances, indices
     ix_choice = np.unique(ixs1[:, 0])
     if ix_choice.size == 0:
-        return ix_choice  # Preserve legacy behavior; no fallback
+        return ix_choice
 
     # 3) Second KNN distances → Gaussian kernel density → percentile threshold
     dist2, _ = nn.kneighbors(points[ix_choice, :2], neighbors)  # distances
@@ -170,7 +170,7 @@ def downsampling_embedding(data_df: pd.DataFrame,
     """
     Returns: ``embedding_downsampling, idx_downsampling, embedding_knn``.
     If ``projection_neighbor_choice='embedding'``, the neighbor graph is built
-    on the downsampled embedding (legacy behavior).
+    on the downsampled embedding.
     """
     gene = data_df['gene_name'].drop_duplicates().iloc[0]
     embedding = data_df.loc[data_df['gene_name'] == gene][['embedding1', 'embedding2']]
@@ -277,10 +277,11 @@ def compute_cell_velocity_(cellDancer_df: pd.DataFrame,
                            expression_scale: Optional[str] = None,
                            projection_neighbor_size: int = 200,
                            projection_neighbor_choice: str = 'embedding') -> pd.DataFrame:
-    """Fully aligned with legacy behavior:
-      - Return a single DataFrame (not a tuple)
-      - Only indices in ``sampling_ixs`` (per-gene 0..ncell-1) have velocity
-      - Copy velocity across all genes for rows with ``cellIndex ∈ sampling_ixs``
+    """Compute cell-level velocity vectors from stage outputs.
+
+    Only indices in ``sampling_ixs`` (per-gene 0..ncell-1) receive velocity
+    vectors; the resulting cell velocity is copied across all genes for rows
+    with ``cellIndex`` in that sampled set.
     """
 
     def velocity_correlation(cell_matrix: np.ndarray, velocity_matrix: np.ndarray) -> np.ndarray:
@@ -318,7 +319,7 @@ def compute_cell_velocity_(cellDancer_df: pd.DataFrame,
     np_splice_all, np_d_matrix_all = data_reshape(cellDancer_df_input)
     n_genes, _ = np_splice_all.shape
 
-    # Prepare data for graph/neighbors (legacy)
+    # Prepare data for graph/neighbors.
     data_df = cellDancer_df_input.loc[:, ['gene_name', 'unsplice', 'splice', 'cellID', 'embedding1', 'embedding2']]
     embedding_downsampling, sampling_ixs, knn_embedding = downsampling_embedding(
         data_df,
@@ -333,7 +334,7 @@ def compute_cell_velocity_(cellDancer_df: pd.DataFrame,
         umap_n_components=None,
     )
 
-    # Note: use the first gene's embedding (legacy)
+    # Use the first gene's embedding as the shared cell embedding.
     first_gene = list(gene_list)[0]
     embedding = cellDancer_df_input[cellDancer_df_input.gene_name == first_gene][['embedding1', 'embedding2']].to_numpy()
 
@@ -349,7 +350,7 @@ def compute_cell_velocity_(cellDancer_df: pd.DataFrame,
         log_verbose("Caution! Overwriting the 'velocity' columns.", level=1)
         cellDancer_df_input = cellDancer_df_input.drop(columns=['velocity1', 'velocity2'])
 
-    # Key: propagate strictly by ``cellIndex ∈ sampling_ixs`` (legacy)
+    # Propagate strictly by ``cellIndex ∈ sampling_ixs``.
     sampling_ixs_all_genes = cellDancer_df_input[cellDancer_df_input['cellIndex'].isin(sampling_ixs)].index
     cellDancer_df_input.loc[sampling_ixs_all_genes, 'velocity1'] = np.tile(velocity_embedding[:, 0], n_genes)
     cellDancer_df_input.loc[sampling_ixs_all_genes, 'velocity2'] = np.tile(velocity_embedding[:, 1], n_genes)

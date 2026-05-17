@@ -38,4 +38,5 @@ plot_velocity_gene(
 )
 ```
 
-These helpers re-use the arrays produced by the pipeline, so no re-training is required. See `gravity/smoke_test.py` for a full scripted example.
+The plotting functions read the arrays produced by the pipeline, so no
+re-training is required. See `gravity/smoke_test.py` for a runnable example.

@@ -70,10 +70,10 @@ class PreprocessDataset(Dataset):
         output_path.parent.mkdir(parents=True, exist_ok=True)
         combined_df.to_csv(output_path, index=False)
 
-    def __len__(self) -> int:  # pragma: no cover - dataset placeholder
+    def __len__(self) -> int:  # pragma: no cover - preprocessing writes a file
         return 0
 
-    def __getitem__(self, index):  # pragma: no cover - dataset placeholder
+    def __getitem__(self, index):  # pragma: no cover - preprocessing writes a file
         raise NotImplementedError
 
 

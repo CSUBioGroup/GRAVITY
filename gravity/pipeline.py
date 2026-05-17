@@ -1,4 +1,4 @@
-"""Top-level orchestration helpers for the GRAVITY workflow.
+"""Pipeline configuration and execution for the GRAVITY workflow.
 
 This module exposes a high-level configuration dataclass and a single
 entry-point function that coordinates the complete GRAVITY pipeline:
@@ -9,10 +9,9 @@ entry-point function that coordinates the complete GRAVITY pipeline:
 - train the gene-wise stage (stage 2),
 - optionally render velocity visualizations at the cell and gene level.
 
-The design aims for a clean, user-friendly workflow while preserving
-GRAVITY's regulation-aware kinetics. Multi-GPU/
-distributed execution is handled by PyTorch Lightning inside each training
-stage; this module orchestrates the outer sequencing.
+Multi-GPU and distributed execution are handled by PyTorch Lightning inside
+each training stage; this module coordinates preprocessing, stage transitions,
+future projection, and optional plotting.
 
 References
 ----------

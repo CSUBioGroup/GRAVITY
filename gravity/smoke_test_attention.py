@@ -1,7 +1,7 @@
 """Smoke test for attention interpretation helpers.
 
-Adjust the paths and parameters as needed before running the script. The
-default paths expect the standard Stage-1 outputs written under
+Set the environment variables below to inspect a different run. The default
+paths expect the standard stage-1 outputs written under
 ``gravity_outputs_pancreas/`` (relative to the project root)."""
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from gravity.utils import log_verbose
 
 
 # ------------------------------
-# Adjust these values to match your setup
+# Defaults can be overridden through environment variables.
 # ------------------------------
 ATTENTION_DIR = Path(os.environ.get("GRAVITY_ATTENTION_DIR", "gravity_outputs_pancreas/attentions"))
 REGULATORY_FACTOR = os.environ.get("GRAVITY_REGULATORY_FACTOR", "PDX1")

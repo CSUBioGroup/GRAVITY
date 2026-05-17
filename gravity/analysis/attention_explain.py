@@ -1,17 +1,15 @@
 """Utilities to interpret attention-derived TF scores.
 
-This helper wraps the manual snippet that ranked regulatory factors (TFs) by their
-differential scores across cell types.  Given the exported
-``attention_TF_scores_with_types.h5ad`` (produced after stage-1 inference), the
-module loads the AnnData, ensures categorical cell-type annotations, performs
-``sc.tl.rank_genes_groups`` and returns a tidy table ready for inspection or
-downstream filtering.
+Given the exported ``attention_TF_scores_with_types.h5ad`` file produced after
+stage-1 inference, this module loads the AnnData object, prepares categorical
+cell-type annotations, runs ``sc.tl.rank_genes_groups``, and returns tidy tables
+for inspection or downstream filtering.
 
 Typical usage::
 
     from gravity.analysis.attention_explain import rank_attention_differentials
     df = rank_attention_differentials(
-        "/path/to/attention_TF_scores_with_types.h5ad",
+        "gravity_outputs_pancreas/attentions/attention_TF_scores_with_types.h5ad",
         cluster_key="cell_type",
         method="wilcoxon",
         group="Beta",
@@ -20,8 +18,8 @@ Typical usage::
     )
     print(df)
 
-The returned dataframe mirrors the ad-hoc analysis carried out previously while
-providing a reusable API.
+The returned dataframe keeps the Scanpy ranking statistics and standardizes the
+column names used by downstream GRAVITY analysis notebooks.
 """
 
 from __future__ import annotations
@@ -175,8 +173,8 @@ def rank_tf_targets(
     tf_gene:
         Regulatory factor (TF) symbol to inspect.
     cell_type:
-        Cell type/cluster name. The helper uses the same sanitisation as the
-        stage-1 exporter when locating ``mean_attention_by_celltype/<cell>.npz``.
+        Cell type/cluster name. The value is normalized before locating
+        ``mean_attention_by_celltype/<cell>.npz``.
     top_k:
         Number of top targets to return when ``target_gene`` is ``None``. Defaults
         to 10.

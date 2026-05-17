@@ -11,8 +11,7 @@ Notes
 - Indices for unspliced/spliced features follow the convention of interleaved
   columns (``u,s,u,s,...``) with the last three columns reserved for
   ``cellIndex, embedding1, embedding2``.
-- Attention-to-weight mapping averages over the key dimension, matching legacy
-  behavior.
+- Attention-to-weight mapping averages over the key dimension.
 """
 
 from __future__ import annotations
@@ -150,7 +149,7 @@ def velocity_calculate(
     def _make_gene_weights(attn_tensor: torch.Tensor | None, batch: int, genes: int) -> torch.Tensor:
         """Map attention to per-gene weights [B, G] using column-wise mean.
 
-        This matches the original behavior (take mean over columns/key axis).
+        Attention weights are averaged over columns/key axis.
         """
         if attn_tensor is None:
             return torch.full((batch, genes), 1.0 / genes, device=device)

@@ -30,8 +30,8 @@ data/pancreas/reference_checkpoints/pancreas_genes.txt
 ```
 
 These files can be used directly as the pancreas stage-1 and stage-2 weights.
-They were converted from the manuscript experiment checkpoints to the current
-GRAVITY module names and can be loaded by the current package directly.
+They were converted to the current GRAVITY module names and can be loaded by
+the current package directly.
 
 `pancreas_genes.txt` is part of the checkpoint contract. GRAVITY models and
 attention matrices are aligned by gene index, so the same gene set in a

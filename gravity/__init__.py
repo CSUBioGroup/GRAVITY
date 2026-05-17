@@ -1,7 +1,7 @@
 """User-friendly entry points for the GRAVITY library."""
 
 from .pipeline import PipelineConfig, run_pipeline
-from .data import preprocess_counts, export_intermediate_from_h5ad
+from .data import export_intermediate_from_h5ad, load_gene_order, preprocess_counts, resolve_gene_order
 from .train import (
     CellStageConfig,
     GeneStageConfig,
@@ -20,6 +20,8 @@ __all__ = [
     "PipelineConfig",
     "run_pipeline",
     "preprocess_counts",
+    "load_gene_order",
+    "resolve_gene_order",
     "export_intermediate_from_h5ad",
     "CellStageConfig",
     "train_cell_stage",

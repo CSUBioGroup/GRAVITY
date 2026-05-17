@@ -9,7 +9,7 @@ sys.path.insert(0, ROOT)
 
 # -- Project information -----------------------------------------------------
 
-project = "GRAVITY"
+project = "GRAVITY predicts RNA velocity and regulatory rewiring by dynamic regulatory mechanism-enhanced deep learning"
 copyright = f"{datetime.now():%Y}, GRAVITY Contributors"
 author = "GRAVITY Contributors"
 release = "0.1.0"
@@ -49,7 +49,8 @@ language = "en"
 
 html_theme = "furo"
 html_static_path = ["_static"]
-html_title = "GRAVITY Docs"
+html_title = project
+html_short_title = "GRAVITY"
 
 # -- Autodoc tweaks ----------------------------------------------------------
 

@@ -34,6 +34,7 @@ import scanpy as sc
 from scipy.sparse import load_npz
 import numpy as np
 import re
+import warnings
 
 from ..utils import log_verbose, resolve_path
 
@@ -47,7 +48,13 @@ def _to_categorical(adata, cluster_key: str) -> None:
 
 
 def _rank_groups(adata, cluster_key: str, method: str, key_added: str) -> None:
-    sc.tl.rank_genes_groups(adata, cluster_key, method=method, key_added=key_added)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="The behavior of DataFrame.sum with axis=None is deprecated.*",
+            category=FutureWarning,
+        )
+        sc.tl.rank_genes_groups(adata, cluster_key, method=method, key_added=key_added)
 
 
 def _collect_rankings(

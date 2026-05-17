@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "gravity"
 version = "0.1.0"
-description = "GRAVITY: Dynamic gene regulatory network-enhanced RNA velocity modeling for trajectory inference and biological discovery"
+description = "GRAVITY predicts RNA velocity and regulatory rewiring by dynamic regulatory mechanism-enhanced deep learning"
 readme = "gravity/README.md"
 requires-python = ">=3.10,<3.12"
 authors = [{name = "GRAVITY Contributors"}]

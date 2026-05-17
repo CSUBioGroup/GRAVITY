@@ -2,10 +2,11 @@
 
 Adjust the paths and parameters as needed before running the script. The
 default paths expect the standard Stage-1 outputs written under
-``gravity_outputs_new/`` (relative to the project root)."""
+``gravity_outputs_pancreas/`` (relative to the project root)."""
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import anndata as ad
@@ -20,9 +21,9 @@ from gravity.utils import log_verbose
 # ------------------------------
 # Adjust these values to match your setup
 # ------------------------------
-ATTENTION_DIR = Path("gravity_outputs_new/attentions")
-REGULATORY_FACTOR = "PDX1"
-CELL_TYPE = "Beta"
+ATTENTION_DIR = Path(os.environ.get("GRAVITY_ATTENTION_DIR", "gravity_outputs_pancreas/attentions"))
+REGULATORY_FACTOR = os.environ.get("GRAVITY_REGULATORY_FACTOR", "PDX1")
+CELL_TYPE = os.environ.get("GRAVITY_CELL_TYPE", "Beta")
 TOP_FACTORS = 10
 TOP_TARGETS = 5
 THRESHOLD = None  # e.g. 0.99 keeps top 1% edges; None disables filtering

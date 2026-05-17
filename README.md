@@ -1,22 +1,34 @@
-GRAVITY: Dynamic gene regulatory network-enhanced RNA velocity modeling for trajectory inference and biological discovery
-===================================================================================
+GRAVITY predicts RNA velocity and regulatory rewiring by dynamic regulatory mechanism-enhanced deep learning
+==========================================================================================================
 
-This subpackage provides a refactored, modular implementation of the GRAVITY
-workflow, inspired by the usability of scVelo while retaining GRAVITY’s
-regulation‑aware kinetics. The library exposes high‑level pipeline helpers and
-modular building blocks for preprocessing, two‑stage training, future position
-estimation, visualization, and TF importance analysis.
+GRAVITY is the software implementation for the manuscript "GRAVITY predicts RNA
+velocity and regulatory rewiring by dynamic regulatory mechanism-enhanced deep
+learning." It connects RNA velocity inference with dynamic gene regulatory
+network modeling by jointly learning cell-state transitions, gene-specific
+transcriptional kinetics, and regulatory rewiring from unspliced/spliced counts,
+cell embeddings, and a prior gene regulatory network.
 
-This subpackage focuses on a streamlined, research‑oriented interface with
-clear separation between preprocessing, training, future projection, and
-visualization components.
+This repository provides a research-oriented Python implementation of the
+GRAVITY workflow. The pipeline first optimizes cell-level velocity and future
+cell positions, then refines gene-level kinetic parameters and exports
+attention-based regulatory summaries for downstream analysis.
+
+Method overview
+---------------
+![GRAVITY method overview](docs/assets/gravity_method_overview.png)
 
 Key features
 ------------
 - End‑to‑end pipeline with a single configuration object.
-- Two‑stage training (cell‑wise, then gene‑wise) with multi‑GPU support.
-- Regulation‑informed future position estimation and plotting utilities.
-- Exportable TF attention scores for downstream analysis.
+- Dynamic regulatory network-aware velocity inference from spliced and
+  unspliced counts.
+- Two-stage optimization: cell-wise trajectory recovery followed by gene-wise
+  kinetic refinement.
+- Prior GRN-informed attention exports for regulator and module analysis.
+- Velocity plotting utilities for cell-level trajectories and selected genes.
+- Input and intermediate count tables follow the cellDancer-style long-format
+  storage convention, then GRAVITY converts them into the internal wide
+  `combine.csv` used by the two-stage model.
 
 Installation
 ------------
@@ -39,41 +51,56 @@ pip install -e .
 
 Quickstart (end‑to‑end)
 -----------------------
+Place the pancreatic endocrinogenesis long-format count table at
+`data/PancreaticEndocrinogenesis_cell_type_u_s.csv` first, or point
+`raw_counts` to another compatible file.
+
 ```python
 from gravity import PipelineConfig, run_pipeline
 
 cfg = PipelineConfig(
-    raw_counts="data/pancreas_long.csv",
-    workdir="gravity_outputs",
+    raw_counts="data/PancreaticEndocrinogenesis_cell_type_u_s.csv",
+    workdir="gravity_outputs_pancreas",
     prior_network="prior_data/network_mouse.zip",
+    gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt",
     accelerator="gpu",
-    devices=[0, 1],
-    strategy="ddp",
+    devices=1,
+    batch_size=16,
+    stage1_epochs=6,
+    stage2_epochs=4,
+    stage1_lr=1e-6,
+    stage2_lr=1e-4,
     make_plot=True,
-    plot_genes=["GCG", "INS1"],
+    plot_genes=["GCG", "INS2"],
 )
 outputs = run_pipeline(cfg)
 print(outputs)
 ```
 
+The unsupervised and contrastive objectives are moderately learning-rate
+sensitive. For reference-style runs, start with `stage1_lr < 1e-5` and tune
+`stage2_lr` within `1e-3` to `1e-5`.
+
 Preparing CSV from AnnData (.h5ad)
 ----------------------------------
-If your dataset starts as an AnnData object, convert it once to the long-format
-CSV that GRAVITY consumes:
+GRAVITY consumes the same cellDancer-style long-format storage layout used by
+the original experiments: one row per cell-gene pair with spliced and
+unspliced counts plus cell metadata. If your dataset starts as an AnnData
+object, convert it once:
 
 ```python
 from gravity import export_intermediate_from_h5ad
 
 export_intermediate_from_h5ad(
     input_h5ad="data/postprocessed.h5ad",
-    output_csv="data/hair.csv",
+    output_csv="data/PancreaticEndocrinogenesis_cell_type_u_s.csv",
     n_top_genes=1000,
     embed_key="X_umap",
     celltype_key="celltype",
 )
 ```
-This helper mirrors the workflow in `gravity/smoke_test_hair.py` and persists
-embeddings/clusters alongside spliced/unspliced counts.
+This helper validates the required spliced/unspliced layers and persists
+embeddings and cluster labels alongside the long-format count table.
 
 Upon completion, `workdir` contains (names configurable via `PipelineConfig`):
 
@@ -84,62 +111,98 @@ Upon completion, `workdir` contains (names configurable via `PipelineConfig`):
 - `attentions/` — TF score matrices and cell‑type mean attention networks
 - `velocity_plots/*.png` — cell‑ and gene‑level velocity plots (if enabled)
 
+Pancreatic endocrinogenesis reference checkpoints are provided under
+`data/pancreas/reference_checkpoints/`:
+
+```text
+data/pancreas/reference_checkpoints/pancreas_stage1.ckpt
+data/pancreas/reference_checkpoints/pancreas_stage2.ckpt
+data/pancreas/reference_checkpoints/pancreas_genes.txt
+```
+
+These checkpoints can be used directly as the pancreas stage-1 and stage-2
+weights. The matching reference exports are named
+`pancreas_stage1_reference.csv` and `pancreas_stage2_reference.csv`; they are
+large pancreas reference results and are intentionally not tracked in git.
+When reproducing the published pancreas checkpoints, pass
+`gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt"` so
+the model and attention tensors use the checkpoint-matching gene index order.
+
 Modular usage
 -------------
 ```python
 from gravity import (
     preprocess_counts,
+    resolve_gene_order,
     CellStageConfig, train_cell_stage,
     GeneStageConfig, train_gene_stage,
 )
 from gravity.tools.future import estimate_future_positions
 from gravity.plotting.velocity import plot_velocity_cell, plot_velocity_gene
 
+RAW_COUNTS = "data/PancreaticEndocrinogenesis_cell_type_u_s.csv"
+WORKDIR = "gravity_outputs_pancreas"
+PRIOR_NET = "prior_data/network_mouse.zip"
+GENE_ORDER = "data/pancreas/reference_checkpoints/pancreas_genes.txt"
+genes = resolve_gene_order(None, GENE_ORDER)
+
 # 1) Preprocess
-middle_csv = preprocess_counts("data/pancreas_long.csv", "gravity_outputs/combine.csv")
+middle_csv = preprocess_counts(
+    RAW_COUNTS,
+    f"{WORKDIR}/combine.csv",
+    gene_order=genes,
+)
 
 # 2) Cell‑wise training (multi‑GPU optional)
 cell_cfg = CellStageConfig(
-    raw_counts="data/pancreas_long.csv",
+    raw_counts=RAW_COUNTS,
     middle_csv=str(middle_csv),
-    prior_network="prior_data/network_mouse.zip",
-    output_dir="gravity_outputs",
+    prior_network=PRIOR_NET,
+    output_dir=WORKDIR,
+    gene_subset=genes,
+    gene_order_path=GENE_ORDER,
     accelerator="gpu",
-    devices=[0, 1],
-    strategy="ddp",
+    devices=1,
+    batch_size=16,
+    learning_rate=1e-6,
 )
 stage1 = train_cell_stage(cell_cfg)
 
 # 3) Future position estimation
-estimate_future_positions(stage1["stage1_csv"], "gravity_outputs/future_positions.npy")
+estimate_future_positions(stage1["stage1_csv"], f"{WORKDIR}/future_positions.npy")
 
 # 4) Gene‑wise fine‑tuning
 gene_cfg = GeneStageConfig(
-    raw_counts="data/pancreas_long.csv",
+    raw_counts=RAW_COUNTS,
     middle_csv=str(middle_csv),
     stage1_checkpoint=str(stage1["checkpoint"]),
-    future_positions="gravity_outputs/future_positions.npy",
-    prior_network="prior_data/network_mouse.zip",
-    output_dir="gravity_outputs",
+    future_positions=f"{WORKDIR}/future_positions.npy",
+    prior_network=PRIOR_NET,
+    output_dir=WORKDIR,
+    gene_subset=genes,
+    gene_order_path=GENE_ORDER,
     accelerator="gpu",
-    devices=[0, 1],
-    strategy="ddp",
+    devices=1,
+    batch_size=16,
+    epochs=4,
+    learning_rate=1e-4,
 )
 stage2 = train_gene_stage(gene_cfg)
 
 # 5) Visualization (cell‑ and gene‑level)
-plot_velocity_cell(str(stage2["stage2_csv"]), output_path="gravity_outputs/cell_velocity.png")
-plot_velocity_gene(str(stage2["stage2_csv"]), gene="GCG", output_path="gravity_outputs/gcg_velocity_expression.png")
+plot_velocity_cell(str(stage2["stage2_csv"]), output_path=f"{WORKDIR}/cell_velocity.png")
+plot_velocity_gene(str(stage2["stage2_csv"]), gene="INS2", output_path=f"{WORKDIR}/ins2_velocity_expression.png")
 ```
 
 Configuration highlights
 -----------------------
 - `PipelineConfig`
   - `gene_subset`: restrict the gene set used for training
+  - `gene_order_path`: load a newline-delimited gene order file; use this for pretrained/reference checkpoints because tensors are gene-index aligned
   - `stage1_epochs` / `stage2_epochs`: number of epochs per stage
   - `val_fraction_stage1` / `val_fraction_stage2`: optional hold-out ratio (default `0.0`, meaning no validation split)
   - `future_tau`: scaling factor controlling the radius for future-neighbor search
-  - `accelerator` / `devices` / `strategy`: forwarded to PyTorch Lightning (e.g., `accelerator="gpu"`, `devices=[0,1]`, `strategy="ddp"`)
+  - `accelerator` / `devices` / `strategy`: forwarded to PyTorch Lightning (e.g., `accelerator="gpu"`, `devices=1`; use `devices=[0,1]`, `strategy="ddp"` for multi-GPU runs)
   - `make_plot`, `plot_genes`: enable plotting and choose genes; `'all'` plots every gene
 - `CellStageConfig`
   - `attention_output`: whether to export TF attention matrices
@@ -150,10 +213,13 @@ Configuration highlights
 
 Inputs and formats
 ------------------
-The long‑format CSV must include at least: `cellID`, `gene_name`, `unsplice`,
-`splice`, `embedding1`, `embedding2`. The optional column `clusters` is used for
+GRAVITY follows the cellDancer-style long-format count table convention. The
+CSV must include at least `cellID`, `gene_name`, `unsplice`, `splice`,
+`embedding1`, and `embedding2`. The optional column `clusters` is used for
 coloring in plots and summary tables. Prior network archive
 `prior_data/network_mouse.zip` should match the original GRAVITY prior format.
+Large raw count tables are kept out of the repository; see `data/README.md` for
+the expected path used by the pancreatic endocrinogenesis smoke test.
 
 Troubleshooting
 ---------------
@@ -164,14 +230,15 @@ Troubleshooting
 
 Citing
 ------
-If this package contributes to your research, please cite the GRAVITY paper,
-“GRAVITY: Dynamic gene regulatory network-enhanced RNA velocity modeling for trajectory inference and biological discovery.” Include version, environment details, and key configuration options in
-your methods section when possible.
+If this package contributes to your research, please cite the GRAVITY paper:
+“GRAVITY predicts RNA velocity and regulatory rewiring by dynamic regulatory
+mechanism-enhanced deep learning.” Include version, environment details, and key
+configuration options in your methods section when possible.
 
 Contributing & license
 ----------------------
 Please open issues/PRs with reproduction steps and sample commands. This
-subpackage is MIT‑licensed as declared in the project’s metadata.
+package is MIT‑licensed as declared in the project’s metadata.
 
 Chinese README
 --------------

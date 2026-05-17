@@ -1,6 +1,6 @@
-# GRAVITY Documentation
+# GRAVITY predicts RNA velocity and regulatory rewiring by dynamic regulatory mechanism-enhanced deep learning
 
-Welcome to the documentation site for **GRAVITY predicts RNA velocity and regulatory rewiring by dynamic regulatory mechanism-enhanced deep learning**.
+Welcome to the GRAVITY documentation site.
 
 These docs cover project goals, pipeline concepts, tutorials, and API usage so you can run GRAVITY for RNA velocity inference, dynamic regulatory rewiring analysis, attention-based regulator summaries, and downstream velocity visualization. GRAVITY uses a cellDancer-style long-format count table as its user-facing input format, then builds the internal wide `combine.csv` used by the two-stage model.
 

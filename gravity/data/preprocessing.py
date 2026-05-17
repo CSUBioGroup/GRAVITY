@@ -117,31 +117,32 @@ def export_intermediate_from_h5ad(
     overwrite: bool = False,
     normalized: bool = False,
 ) -> Path:
-    """Preprocess an AnnData (.h5ad) for GRAVITY and export an intermediate CSV.
+    """Preprocess AnnData for GRAVITY and export a cellDancer-style CSV.
 
-    This function performs ONLY preprocessing required by GRAVITY's intermediate
-    table. It does not run RNA velocity inference, does not plot, and does not
-    save a processed .h5ad.
+    This function performs only the preprocessing required to create GRAVITY's
+    user-facing long-format count table. It does not run RNA velocity
+    inference, does not plot, and does not save a processed .h5ad.
 
     Pipeline
     --------
     1) Read the input AnnData (.h5ad).
     2) Optionally force-keep user-specified genes through filtering/HVG selection.
-    3) Run a single scVelo preprocessing pass (`filter_and_normalize`).
+    3) Normalize and filter genes with the local preprocessing settings.
     4) Compute first-order moments with `scv.pp.moments` (produces 'Mu'/'Ms').
-    5) Export a CSV via the local `adata_to_df_with_embed` function, including
-       Mu/Ms, the chosen 2D embedding, and cell-type labels.
+    5) Export a cellDancer-style CSV via the local `adata_to_df_with_embed`
+       function, including Mu/Ms, the chosen 2D embedding, and cell-type
+       labels.
 
     Parameters
     ----------
     input_h5ad
         Path to an AnnData file that includes 'spliced' and 'unspliced' layers.
     output_csv
-        Destination CSV file path for the intermediate table.
+        Destination CSV file path for the cellDancer-style long-format table.
     retain_genes
         Genes that must be retained during filtering/HVG selection (if present).
     min_shared_counts
-        Minimum shared counts across cells for gene filtering (scVelo).
+        Minimum shared counts across cells for gene filtering.
     n_top_genes
         Number of highly variable genes to retain (in addition to `retain_genes`).
     n_pcs

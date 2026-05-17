@@ -8,4 +8,7 @@ run_full_pipeline
 inspect_outputs
 ```
 
-This section walks through common GRAVITY workflows. Start with preparing data, then learn how to launch the two-stage pipeline, and finally see how to interpret generated artefacts (checkpoints, plots, TF attention tables).
+This section walks through the current GRAVITY workflows. Start by preparing a
+cellDancer-style long-format CSV, run the two-stage pancreas reference
+pipeline, and then inspect generated artefacts such as checkpoints, velocity
+plots, and TF attention tables.

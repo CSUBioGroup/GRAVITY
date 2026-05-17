@@ -1,0 +1,42 @@
+AGENTS.md
+.DS_Store
+.idea/
+
+# Python/runtime artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# Local experiment outputs
+gravity_outputs*/
+output/
+outputs/
+logs/
+*.ckpt
+*.npy
+
+# Large local datasets used for smoke tests and experiments
+data/*.csv
+data/*.csv.zip
+data/**/*.csv
+data/**/*.csv.zip
+data/**/*.h5ad
+data/pancreas/reference_outputs/
+*.h5ad
+
+# Small published reference weights
+!data/pancreas/
+!data/pancreas/reference_checkpoints/
+!data/pancreas/reference_checkpoints/*.ckpt
+!data/pancreas/reference_checkpoints/*.txt
+
+# Local exploratory scripts/data that are not part of the package
+gravity/prior_GRN.csv
+gravity/*斑马鱼*.py

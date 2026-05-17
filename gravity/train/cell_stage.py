@@ -21,7 +21,11 @@ try:  # Lightning 2.x
 except ImportError:  # pragma: no cover - Lightning 1.x fallback path
     TQDMProgressBar = None
 
-from ..data.preprocessing import load_cell_stage_dataset
+from ..data.preprocessing import (
+    assert_gene_order_matches,
+    load_cell_stage_dataset,
+    resolve_gene_order,
+)
 from .cell_model import FullModelCellWise
 from ..utils import log_verbose, resolve_path
 import time
@@ -56,7 +60,9 @@ class CellStageConfig:
     """Configuration bundle for the cell-wise training stage.
 
     See also the top-level :class:`gravity.pipeline.PipelineConfig` for how
-    device/distribution options propagate.
+    device/distribution options propagate. ``gene_order_path`` fixes the
+    checkpoint-compatible gene index order when using pretrained/reference
+    weights.
     """
 
     raw_counts: str
@@ -67,6 +73,7 @@ class CellStageConfig:
     checkpoint_name: str = 'stage1.ckpt'
     attention_dir: str = 'attentions'
     gene_subset: Optional[Sequence[str]] = None
+    gene_order_path: Optional[str] = None
     batch_size: int = 32
     epochs: int = 6
     accelerator: str = 'auto'
@@ -81,7 +88,7 @@ class CellStageConfig:
     seed: int = 42
     log_every_n_steps: int = 50
     progress_bar: bool = True
-    learning_rate: float = 1e-5
+    learning_rate: float = 1e-6
     embedding_size: int = 16
     model_dimension: int = 16
     ffn_dimension: int = 16
@@ -129,24 +136,15 @@ def train_cell_stage(config: CellStageConfig) -> Dict[str, Path]:
     else:
         prior_network_path = resolve_path(config.prior_network)
 
-    # Skip if outputs already exist
     stage1_csv_path = output_dir / config.stage1_csv
     checkpoint_path = output_dir / config.checkpoint_name
     attn_h5ad = attention_dir / "attention_TF_scores_with_types.h5ad"
-    if stage1_csv_path.exists() and checkpoint_path.exists() and (not config.attention_output or attn_h5ad.exists()):
-        log_verbose("[gravity] stage1 outputs detected (csv/ckpt/attn); skipping training.", level=1)
-        return {
-            'stage1_csv': stage1_csv_path,
-            'checkpoint': checkpoint_path,
-            'attention_dir': attention_dir if config.attention_output else None,
-            'genes_path': output_dir / 'genes.txt',
-            'gene_map': output_dir / 'genemap.json',
-        }
+    effective_gene_subset = resolve_gene_order(config.gene_subset, config.gene_order_path)
 
     dataset = load_cell_stage_dataset(
         config.middle_csv,
         prior_path=prior_network_path,
-        gene_list=config.gene_subset,
+        gene_list=effective_gene_subset,
         n_pos_neighbors=config.n_pos_neighbors,
         n_neg_neighbors=config.n_neg_neighbors
     )
@@ -158,6 +156,8 @@ def train_cell_stage(config: CellStageConfig) -> Dict[str, Path]:
     )
 
     hvgs = dataset.hvg
+    genes_path = output_dir / 'genes.txt'
+    assert_gene_order_matches(genes_path, hvgs, label="stage1 genes.txt")
     stage1_csv_path = output_dir / config.stage1_csv
     checkpoint_path = output_dir / config.checkpoint_name
     attn_h5ad = attention_dir / "attention_TF_scores_with_types.h5ad"
@@ -195,7 +195,6 @@ def train_cell_stage(config: CellStageConfig) -> Dict[str, Path]:
     embedding_map = dict(zip(raw_df['cellIndex'], clusters_series))
     id_map = dict(zip(raw_df['cellIndex'], raw_df['cellID'])) if 'cellID' in raw_df.columns else {idx: str(idx) for idx in raw_df['cellIndex']}
 
-    genes_path = output_dir / 'genes.txt'
     with genes_path.open('w') as fp:
         for gene in hvgs:
             fp.write(f"{gene}\n")

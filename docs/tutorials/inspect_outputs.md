@@ -2,6 +2,12 @@
 
 GRAVITY writes several artefacts under your `workdir`. Use built-in utilities to inspect them.
 
+Keep `genes.txt` with any checkpoint or attention export you intend to reuse.
+The file records the gene-index order used by the model. When re-running a
+pretrained/reference checkpoint, pass that file as `gene_order_path`; otherwise
+the same genes in a different CSV order can produce misaligned attention
+summaries.
+
 ## Attention matrices and TF ranks
 
 ```python

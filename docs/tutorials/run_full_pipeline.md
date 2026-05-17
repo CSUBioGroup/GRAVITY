@@ -6,14 +6,16 @@ Once your CSV is ready, run the two-stage pipeline via `PipelineConfig` and `run
 from gravity import PipelineConfig, run_pipeline
 
 cfg = PipelineConfig(
-    raw_counts="data/pancreas_long.csv",
+    raw_counts="path/to/your_counts.csv",
     workdir="gravity_outputs",
     prior_network="prior_data/network_mouse.zip",
     accelerator="gpu",
-    devices=[0],
-    strategy="ddp",
+    devices=1,
+    batch_size=16,
+    stage1_lr=1e-6,
+    stage2_lr=1e-4,
     make_plot=True,
-    plot_genes=["GCG", "INS1"],
+    plot_genes=["Rfx6", "Rbfox3"],
     stage1_epochs=6,
     stage2_epochs=6,
 )
@@ -24,7 +26,17 @@ print(outputs)
 Key tips:
 
 - Use unique `workdir` names per experiment to avoid overwriting checkpoints.
-- Set `devices` and `strategy` to match your cluster (e.g., `devices=[0,1]`, `strategy="ddp"`).
+- Set `devices` and `strategy` to match your hardware. Start with `devices=1`; use `devices=[0,1]`, `strategy="ddp"` only for multi-GPU runs.
 - Reduce `batch_size` or provide `gene_subset` when GPU memory is limited.
+- Pass `gene_order_path` when using pretrained/reference checkpoints; checkpoint tensors are aligned by gene index, not only by gene name.
+- The unsupervised and contrastive objectives are learning-rate sensitive. For reference-style runs, use `stage1_lr < 1e-5` and tune `stage2_lr` within `1e-3` to `1e-5`.
 
 The resulting dictionary contains paths to `combine.csv`, stage checkpoints, `future_positions.npy`, and attention exports.
+
+For pancreatic endocrinogenesis examples, pretrained reference weights are
+available in `data/pancreas/reference_checkpoints/`. The matching large
+reference exports are named `pancreas_stage1_reference.csv` and
+`pancreas_stage2_reference.csv`; keep them outside git or distribute them
+separately. Use
+`gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt"` for
+published pancreas checkpoint reproduction.

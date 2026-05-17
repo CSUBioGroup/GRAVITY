@@ -13,9 +13,95 @@ __all__ = [
     "preprocess_counts",
     "load_cell_stage_dataset",
     "load_gene_stage_dataset",
+    "load_gene_order",
+    "resolve_gene_order",
+    "assert_gene_order_matches",
     "export_intermediate_from_h5ad",   # new
     "adata_to_df_with_embed",          # new (self-contained version)
 ]
+
+
+def _norm_gene(gene: str) -> str:
+    return str(gene).strip().upper()
+
+
+def load_gene_order(path: str) -> list[str]:
+    """Load a newline-delimited gene order file.
+
+    The order is part of the model contract for pretrained checkpoints because
+    attention and solver tensors are indexed by gene position.
+    """
+
+    gene_path = resolve_path(path)
+    genes = [_norm_gene(line) for line in Path(gene_path).read_text().splitlines()]
+    genes = [gene for gene in genes if gene]
+    seen = set()
+    duplicates = set()
+    for gene in genes:
+        if gene in seen:
+            duplicates.add(gene)
+        seen.add(gene)
+    duplicates = sorted(duplicates)
+    if duplicates:
+        preview = ", ".join(duplicates[:10])
+        raise ValueError(
+            f"gene order file contains duplicate genes: {preview}"
+            + ("..." if len(duplicates) > 10 else "")
+        )
+    if not genes:
+        raise ValueError(f"gene order file is empty: {gene_path}")
+    return genes
+
+
+def resolve_gene_order(
+    gene_subset: Optional[Sequence[str]] = None,
+    gene_order_path: Optional[str] = None,
+) -> Optional[list[str]]:
+    """Resolve the effective gene list, preserving checkpoint-compatible order."""
+
+    if gene_order_path is None:
+        return None if gene_subset is None else [_norm_gene(gene) for gene in gene_subset]
+
+    ordered = load_gene_order(gene_order_path)
+    if gene_subset is None:
+        return ordered
+
+    requested = [_norm_gene(gene) for gene in gene_subset if _norm_gene(gene)]
+    requested_set = set(requested)
+    ordered_set = set(ordered)
+    missing = [gene for gene in requested if gene not in ordered_set]
+    if missing:
+        preview = ", ".join(missing[:10])
+        raise ValueError(
+            f"gene_subset contains genes not present in gene_order_path: {preview}"
+            + ("..." if len(missing) > 10 else "")
+        )
+    return [gene for gene in ordered if gene in requested_set]
+
+
+def assert_gene_order_matches(path: Path, expected: Sequence[str], *, label: str = "genes.txt") -> None:
+    """Raise if an existing gene-order file does not match expected order."""
+
+    if not path.exists():
+        return
+    current = [_norm_gene(line) for line in path.read_text().splitlines() if _norm_gene(line)]
+    expected_norm = [_norm_gene(gene) for gene in expected if _norm_gene(gene)]
+    if current == expected_norm:
+        return
+
+    first_mismatch = None
+    for idx, (cur_gene, exp_gene) in enumerate(zip(current, expected_norm)):
+        if cur_gene != exp_gene:
+            first_mismatch = f"first mismatch at position {idx}: existing={cur_gene}, expected={exp_gene}"
+            break
+    if first_mismatch is None:
+        first_mismatch = f"length differs: existing={len(current)}, expected={len(expected_norm)}"
+
+    raise RuntimeError(
+        f"Existing {label} at {path} does not match the current gene order "
+        f"({first_mismatch}). Use a different workdir, remove stale outputs, "
+        "or pass the checkpoint-matching gene_order_path."
+    )
 
 def export_intermediate_from_h5ad(
     input_h5ad: str,
@@ -278,7 +364,12 @@ def adata_to_df_with_embed(
     return raw_data
 
 
-def preprocess_counts(input_file: str, output_csv: str) -> Path:
+def preprocess_counts(
+    input_file: str,
+    output_csv: str,
+    *,
+    gene_order: Optional[Sequence[str]] = None,
+) -> Path:
     """Prepare the cell-wise training table from a long single-cell CSV.
 
     Parameters
@@ -288,6 +379,10 @@ def preprocess_counts(input_file: str, output_csv: str) -> Path:
         `cellID`, `gene_name`, `unsplice`, `splice`, `embedding1`, `embedding2`.
     output_csv:
         Destination CSV containing one row per cell with serialized gene tuples.
+    gene_order:
+        Optional ordered gene list. When provided, matching gene columns are
+        written first in this order so downstream checkpoints see the intended
+        gene-index layout.
 
     Returns
     -------
@@ -302,7 +397,7 @@ def preprocess_counts(input_file: str, output_csv: str) -> Path:
         return output_path
     log_verbose(f"[gravity] preprocessing raw counts from {input_path} → {output_path}", level=1)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    PreprocessDataset(str(input_path), str(output_path))
+    PreprocessDataset(str(input_path), str(output_path), gene_order=gene_order)
     return output_path
 
 

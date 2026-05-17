@@ -97,7 +97,7 @@ class FullModelGeneWise(pl.LightningModule):
         origin_data: Optional[pd.DataFrame] = None,
         negs: Optional[np.ndarray] = None,
         output_csv: Optional[str] = None,
-        learning_rate: float = 1e-2,
+        learning_rate: float = 1e-4,
     ) -> None:
         super().__init__()
         self.csv = pd.DataFrame(columns=['cellIndex', 'gene_name', 'unsplice', 'splice', 'unsplice_predict', 'splice_predict', 'alpha', 'beta', 'gamma', 'embedding1', 'embedding2', 'clusters', 'cellID'])
@@ -178,7 +178,8 @@ class FullModelGeneWise(pl.LightningModule):
                 to_insert += [self.embed_mapper.get(key, "NA"), self.id_mapper.get(key, str(key))]
                 rows.append(to_insert)
         if rows:
-            self.csv = pd.concat([self.csv, pd.DataFrame(rows, columns=self.csv.columns)], ignore_index=True)
+            rows_df = pd.DataFrame(rows, columns=self.csv.columns)
+            self.csv = rows_df if self.csv.empty else pd.concat([self.csv, rows_df], ignore_index=True)
         loss = velocity_calculate_gene(self.origin_data, cell_index, unsplice, splice, output[0], output[1], self.nbrs)[0]
         self.log('test_loss', loss, on_step=True, on_epoch=True, prog_bar=True)
 

@@ -14,6 +14,12 @@
 ```
 
 ```{eval-rst}
+.. automodule:: gravity.data.preprocessing
+    :members:
+    :undoc-members:
+```
+
+```{eval-rst}
 .. automodule:: gravity.train.cell_stage
     :members:
     :undoc-members:

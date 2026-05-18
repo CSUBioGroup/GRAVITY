@@ -1,4 +1,4 @@
-"""Top-level orchestration helpers for the GRAVITY workflow.
+"""Pipeline configuration and execution for the GRAVITY workflow.
 
 This module exposes a high-level configuration dataclass and a single
 entry-point function that coordinates the complete GRAVITY pipeline:
@@ -9,10 +9,9 @@ entry-point function that coordinates the complete GRAVITY pipeline:
 - train the gene-wise stage (stage 2),
 - optionally render velocity visualizations at the cell and gene level.
 
-The design aims for a clean, user-friendly workflow while preserving
-GRAVITY's regulation-aware kinetics. Multi-GPU/
-distributed execution is handled by PyTorch Lightning inside each training
-stage; this module orchestrates the outer sequencing.
+Multi-GPU and distributed execution are handled by PyTorch Lightning inside
+each training stage; this module coordinates preprocessing, stage transitions,
+future projection, and optional plotting.
 
 References
 ----------
@@ -28,7 +27,7 @@ import pandas as pd
 import re
 import time
 
-from .data import preprocess_counts, export_intermediate_from_h5ad
+from .data import preprocess_counts, export_intermediate_from_h5ad, resolve_gene_order
 from .train import CellStageConfig, GeneStageConfig, train_cell_stage, train_gene_stage
 from .tools.future import estimate_future_positions
 from .plotting.velocity import plot_velocity_gene, plot_velocity_cell
@@ -55,12 +54,19 @@ class PipelineConfig:
         Path to the prior TF–target network archive used by GRAVITY.
     gene_subset:
         Optional list of genes to restrict training and evaluation.
+    gene_order_path:
+        Optional newline-delimited gene list that fixes gene-index order. Use
+        this when running pretrained/reference checkpoints; model weights and
+        attention matrices are aligned by gene position, not only by gene name.
     batch_size:
         Mini-batch size used by both training stages.
     stage1_epochs, stage2_epochs:
         Number of epochs per stage.
     stage1_lr, stage2_lr:
-        Learning rates per stage.
+        Learning rates per stage. The unsupervised cell-wise stage and
+        contrastive gene-wise stage are somewhat learning-rate sensitive; for
+        reference-style runs we recommend keeping ``stage1_lr`` below ``1e-5``
+        and tuning ``stage2_lr`` between ``1e-3`` and ``1e-5``.
     val_fraction_stage1, val_fraction_stage2:
         Fraction of data reserved for validation in each stage.
     accelerator, devices, strategy, precision, gradient_clip_val, num_workers:
@@ -80,13 +86,14 @@ class PipelineConfig:
     workdir: str = 'gravity_outputs'
     prior_network: Optional[str] = './prior_data/network_mouse.zip'
     gene_subset: Optional[Sequence[str]] = None
+    gene_order_path: Optional[str] = None
     batch_size: int = 16
     n_pos_neighbors: int = 30
     n_neg_neighbors: int = 10
     stage1_epochs: int = 6
     stage2_epochs: int = 6
-    stage1_lr: float = 1e-5
-    stage2_lr: float = 1e-2
+    stage1_lr: float = 1e-6
+    stage2_lr: float = 1e-4
     embedding_size: int = 16
     model_dimension: int = 16
     ffn_dimension: int = 16
@@ -169,7 +176,12 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Path]:
         prior_network_path = None
     else:
         prior_network_path = resolve_path(config.prior_network)
-    preprocess_counts(str(raw_counts_path), str(middle_csv_path))
+    effective_gene_subset = resolve_gene_order(config.gene_subset, config.gene_order_path)
+    preprocess_counts(
+        str(raw_counts_path),
+        str(middle_csv_path),
+        gene_order=effective_gene_subset,
+    )
 
     cell_cfg = CellStageConfig(
         raw_counts=str(raw_counts_path),
@@ -179,7 +191,8 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Path]:
         stage1_csv=config.stage1_csv_name,
         checkpoint_name=config.stage1_checkpoint_name,
         attention_dir='attentions',
-        gene_subset=config.gene_subset,
+        gene_subset=effective_gene_subset,
+        gene_order_path=config.gene_order_path,
         n_pos_neighbors = config.n_pos_neighbors,
         n_neg_neighbors = config.n_neg_neighbors,
         batch_size=config.batch_size,
@@ -247,7 +260,8 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Path]:
         output_dir=str(workdir),
         stage2_csv=config.stage2_csv_name,
         checkpoint_name=config.stage2_checkpoint_name,
-        gene_subset=config.gene_subset,
+        gene_subset=effective_gene_subset,
+        gene_order_path=config.gene_order_path,
         batch_size=config.batch_size,
         epochs=config.stage2_epochs,
         accelerator=config.accelerator,

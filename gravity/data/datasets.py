@@ -25,12 +25,26 @@ __all__ = [
 class PreprocessDataset(Dataset):
     """Transform long-format counts into the wide format used by GRAVITY."""
 
-    def __init__(self, csv_file: str, middle_name: str):
+    def __init__(self, csv_file: str, middle_name: str, gene_order: Optional[Sequence[str]] = None):
         csv_path = resolve_path(csv_file)
         data = pd.read_csv(csv_path)
         if 'cellIndex' not in data.columns:
             data.insert(0, 'cellIndex', pd.factorize(data['cellID'])[0])
         data = data.iloc[:, [0, 1, 2, 3, -2, -1]]
+        gene_lookup = {}
+        for gene in data['gene_name'].astype(str):
+            gene_lookup.setdefault(gene.upper(), gene)
+        ordered_gene_cols = None
+        if gene_order is not None:
+            ordered_keys = [str(g).strip().upper() for g in gene_order if str(g).strip()]
+            missing = [g for g in ordered_keys if g not in gene_lookup]
+            if missing:
+                preview = ', '.join(missing[:10])
+                raise ValueError(
+                    f"gene_order contains genes not found in input CSV: {preview}"
+                    + ("..." if len(missing) > 10 else "")
+                )
+            ordered_gene_cols = [f"gene_u_s_{gene_lookup[g]}" for g in ordered_keys]
         unique_indices = data.cellIndex.unique()
         records = []
         for cell_idx in tqdm(unique_indices, desc="preprocess"):
@@ -45,14 +59,21 @@ class PreprocessDataset(Dataset):
                 row[f'gene_u_s_{entry.gene_name}'] = str(gene_tup)
             records.append(row)
         combined_df = pd.DataFrame(records)
+        if ordered_gene_cols is not None:
+            base_cols = ['cellIndex', 'embedding1', 'embedding2']
+            remaining_gene_cols = [
+                c for c in combined_df.columns
+                if c.startswith('gene_u_s_') and c not in ordered_gene_cols
+            ]
+            combined_df = combined_df.loc[:, base_cols + ordered_gene_cols + remaining_gene_cols]
         output_path = Path(middle_name)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         combined_df.to_csv(output_path, index=False)
 
-    def __len__(self) -> int:  # pragma: no cover - dataset placeholder
+    def __len__(self) -> int:  # pragma: no cover - preprocessing writes a file
         return 0
 
-    def __getitem__(self, index):  # pragma: no cover - dataset placeholder
+    def __getitem__(self, index):  # pragma: no cover - preprocessing writes a file
         raise NotImplementedError
 
 

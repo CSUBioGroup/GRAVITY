@@ -22,7 +22,11 @@ try:  # Lightning 2.x
 except ImportError:  # pragma: no cover - Lightning 1.x fallback path
     TQDMProgressBar = None
 
-from ..data.preprocessing import load_gene_stage_dataset
+from ..data.preprocessing import (
+    assert_gene_order_matches,
+    load_gene_stage_dataset,
+    resolve_gene_order,
+)
 from .gene_model import FullModelGeneWise
 from ..utils import log_verbose, resolve_path
 import time
@@ -57,7 +61,9 @@ class GeneStageConfig:
     """Configuration bundle for the gene-wise fine-tuning stage.
 
     Device and distribution arguments mirror those in
-    :class:`gravity.pipeline.PipelineConfig`.
+    :class:`gravity.pipeline.PipelineConfig`. ``gene_order_path`` should point
+    to the same gene list used by the stage-1 checkpoint when reproducing
+    pretrained/reference runs.
     """
 
     raw_counts: str
@@ -69,6 +75,7 @@ class GeneStageConfig:
     stage2_csv: str = 'stage2.csv'
     checkpoint_name: str = 'stage2.ckpt'
     gene_subset: Optional[Sequence[str]] = None
+    gene_order_path: Optional[str] = None
     batch_size: int = 32
     epochs: int = 6
     accelerator: str = 'auto'
@@ -81,7 +88,7 @@ class GeneStageConfig:
     seed: int = 42
     log_every_n_steps: int = 50
     progress_bar: bool = True
-    learning_rate: float = 1e-2
+    learning_rate: float = 1e-4
     embedding_size: int = 16
     model_dimension: int = 16
     ffn_dimension: int = 16
@@ -123,20 +130,13 @@ def train_gene_stage(config: GeneStageConfig) -> Dict[str, Path]:
     genes_path = output_dir / 'genes.txt'
     mapper_path = output_dir / 'genemap.json'
 
-    if stage2_csv_path.exists() and checkpoint_path.exists():
-        log_verbose("[gravity] stage2 outputs detected (csv/ckpt); skipping training.", level=1)
-        return {
-            'stage2_csv': stage2_csv_path,
-            'checkpoint': checkpoint_path,
-            'genes_path': genes_path,
-            'gene_map': mapper_path,
-        }
+    effective_gene_subset = resolve_gene_order(config.gene_subset, config.gene_order_path)
 
     dataset = load_gene_stage_dataset(
         config.middle_csv,
         prior_path=config.prior_network,
         future_positions=config.future_positions,
-        gene_list=config.gene_subset,
+        gene_list=effective_gene_subset,
     )
 
     total_cells = len(dataset)
@@ -144,6 +144,7 @@ def train_gene_stage(config: GeneStageConfig) -> Dict[str, Path]:
         f"[gravity] stage2 dataset loaded: {total_cells} cells; val_fraction={config.val_fraction}",
         level=1,
     )
+    assert_gene_order_matches(genes_path, dataset.hvg, label="stage2 genes.txt")
 
     skip_stage2 = False
     if stage2_csv_path.exists() and checkpoint_path.exists():

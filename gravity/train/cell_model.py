@@ -11,8 +11,7 @@ Notes
 - Indices for unspliced/spliced features follow the convention of interleaved
   columns (``u,s,u,s,...``) with the last three columns reserved for
   ``cellIndex, embedding1, embedding2``.
-- Attention-to-weight mapping averages over the key dimension, matching legacy
-  behavior.
+- Attention-to-weight mapping averages over the key dimension.
 """
 
 from __future__ import annotations
@@ -150,7 +149,7 @@ def velocity_calculate(
     def _make_gene_weights(attn_tensor: torch.Tensor | None, batch: int, genes: int) -> torch.Tensor:
         """Map attention to per-gene weights [B, G] using column-wise mean.
 
-        This matches the original behavior (take mean over columns/key axis).
+        Attention weights are averaged over columns/key axis.
         """
         if attn_tensor is None:
             return torch.full((batch, genes), 1.0 / genes, device=device)
@@ -256,7 +255,7 @@ class FullModelCellWise(pl.LightningModule):
         gene_list_path: str = 'genes.txt',
         gene_mapper_path: str = 'genemap.json',
         csr_topk: int = 64,
-        learning_rate: float = 1e-5,
+        learning_rate: float = 1e-6,
     ) -> None:
         super().__init__()
         self.csv = pd.DataFrame(columns=['cellIndex', 'gene_name', 'unsplice', 'splice', 'unsplice_predict', 'splice_predict', 'alpha', 'beta', 'gamma', 'embedding1', 'embedding2', 'clusters', 'cellID'])
@@ -398,7 +397,8 @@ class FullModelCellWise(pl.LightningModule):
                 to_insert += [self.embed_mapper.get(key, "NA"), self.id_mapper.get(key, str(key))]
                 rows.append(to_insert)
         if rows:
-            self.csv = pd.concat([self.csv, pd.DataFrame(rows, columns=self.csv.columns)], ignore_index=True)
+            rows_df = pd.DataFrame(rows, columns=self.csv.columns)
+            self.csv = rows_df if self.csv.empty else pd.concat([self.csv, rows_df], ignore_index=True)
         loss = velocity_calculate(self.origin_data, cell_index, unsplice, splice, output[0], output[1], points[:, 0], points[:, 1], 30, 'triple', self.GravityModel.attention, self.nbrs, self.negs, self._origin_cache)[0]
         self.log('test_loss', loss, on_step=True, on_epoch=True, prog_bar=True)
 
@@ -415,8 +415,8 @@ class FullModelCellWise(pl.LightningModule):
 
             X = self.builder.to_csr(n_rows=len(self.obs_names))
             adata = AnnData(X)
-            adata.obs_names = pd.Index([str(x) for x in self.obs_names], dtype="string")
-            adata.var_names = pd.Index([str(v) for v in self.scorer.keys], dtype="string")
+            adata.obs_names = pd.Index([str(x) for x in self.obs_names], dtype=object)
+            adata.var_names = pd.Index([str(v) for v in self.scorer.keys], dtype=object)
             adata.obs["cell_type"] = pd.Categorical([str(x) for x in self.obs_celltype])
 
             out_h5ad = os.path.join(self.output_network_path, "attention_TF_scores_with_types.h5ad")

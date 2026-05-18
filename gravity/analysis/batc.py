@@ -1,7 +1,6 @@
 """BATC metric computation utilities.
 
-This module packages the ad-hoc BATC (Branch-Aware Tangent Consistency)
-computation that was previously performed in notebooks/scripts. The metric
+This module implements the BATC (Branch-Aware Tangent Consistency) metric. BATC
 quantifies how well per-cell velocity vectors align with principal curves that
 connect successive cell clusters along a lineage graph.
 
@@ -17,9 +16,9 @@ The implementation follows these high-level steps:
 4. Aggregate cosine scores per edge, per cell (taking the best outgoing branch
    when multiple exist), and overall.
 
-The public entry-point :func:`compute_batc` exposes configuration knobs while
-keeping the original behaviour intact. Results can optionally be written back
-into ``adata.obs``/``adata.uns`` for downstream inspection.
+The public entry point :func:`compute_batc` exposes configuration options and
+can optionally write results back into ``adata.obs``/``adata.uns`` for
+downstream inspection.
 """
 
 from __future__ import annotations
@@ -88,9 +87,8 @@ def _extract_embedding_and_velocity(
 ) -> Tuple[ArrayLike, ArrayLike]:
     """Return ``(X, V)`` matrices from an :class:`AnnData` object.
 
-    The logic mirrors the original script: first attempt direct keys, then fall
-    back to ``X_<key>`` / ``velocity_<key>`` style lookups, and finally try the
-    ``layers`` container.
+    Lookup order: direct keys, ``X_<key>`` / ``velocity_<key>`` style keys, then
+    the ``layers`` container.
     """
 
     if hasattr(adata, "obsm"):

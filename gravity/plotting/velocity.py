@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 """Plotting helpers for GRAVITY velocity visualisations.
 
-This module preserves the legacy visual behavior while exposing a clearer API.
-The cell-level
-arrows are generated via a legacy grid-curve procedure (two-end grids, two KNN
-passes, Gaussian weights, absolute ``min_mass`` threshold, Bezier curves, and
-uniform arrow length).
+Cell-level arrows are generated with the grid-curve procedure used by the
+GRAVITY velocity plots: two-end grids, two KNN passes, Gaussian weights,
+absolute ``min_mass`` threshold, Bezier curves, and uniform arrow length.
 
 Entrypoints
 -----------
@@ -39,7 +37,7 @@ __all__ = ["plot_velocity_cell", "plot_velocity_gene", "scatter_cell", "build_co
 
 
 # -----------------------------------------------------------------------------
-# DataFrame column extraction (legacy behavior: filter by gene and dropna)
+# DataFrame column extraction
 # -----------------------------------------------------------------------------
 def _extract_from_df(df: pd.DataFrame, attrs: Sequence[str] | str, gene: Optional[str] = None) -> np.ndarray:
     """Return selected columns for a single gene, dropping rows with NaNs."""
@@ -54,8 +52,27 @@ def _extract_from_df(df: pd.DataFrame, attrs: Sequence[str] | str, gene: Optiona
     return arr
 
 
+def _resolve_gene_name(df: pd.DataFrame, gene: Optional[str]) -> str:
+    """Resolve a requested gene name against the stage CSV, case-insensitively."""
+    genes = df["gene_name"].dropna().astype(str).unique().tolist()
+    if not genes:
+        raise ValueError("No genes found in stage CSV.")
+    if gene is None:
+        return genes[0]
+    gene = str(gene)
+    if gene in genes:
+        return gene
+    matches = [candidate for candidate in genes if candidate.upper() == gene.upper()]
+    if len(matches) == 1:
+        return matches[0]
+    if matches:
+        raise ValueError(f"Gene name {gene!r} is ambiguous; matching stage CSV entries: {matches[:10]}")
+    preview = ", ".join(genes[:10])
+    raise ValueError(f"Gene {gene!r} was not found in stage CSV. Available genes include: {preview}")
+
+
 # -----------------------------------------------------------------------------
-# Legacy grid-curve implementation for cell-level arrows
+# Grid-curve implementation for cell-level arrows
 # -----------------------------------------------------------------------------
 def _find_nn_neighbors(data: np.ndarray, queries: np.ndarray, n_neighbors: int):
     nn = NearestNeighbors(n_neighbors=max(1, int(n_neighbors)))
@@ -64,12 +81,12 @@ def _find_nn_neighbors(data: np.ndarray, queries: np.ndarray, n_neighbors: int):
     return dists, idxs
 
 
-def _grid_curve_legacy(ax,
+def _grid_curve_arrows(ax,
                        embedding_ds: np.ndarray,
                        velocity_embedding: np.ndarray,
                        arrow_grid: Tuple[int, int],
                        min_mass: float) -> None:
-    """Legacy curve-based arrow rendering on a rectangular grid.
+    """Curve-based arrow rendering on a rectangular grid.
 
     Pipeline: two-end grids → KNN smoothing (Gaussian kernel) → absolute mass
     threshold → Bezier curve evaluation → normalized tail arrows.
@@ -119,7 +136,7 @@ def _grid_curve_legacy(ax,
         keep = mass_head >= float(min_mass)  # Absolute threshold
         return (XY[keep], UZ_head[keep], UZ_tail[keep], UZ_head2[keep], UZ_tail2[keep], grs)
 
-    curve_smooth = 0.8  # Fixed as in the legacy implementation
+    curve_smooth = 0.8
     XY, UH, UT, UH2, UT2, grs = _calculate_two_end_grid(
         embedding_ds, velocity_embedding, smooth=curve_smooth, steps=arrow_grid, min_mass=min_mass
     )
@@ -168,7 +185,7 @@ def _grid_curve_legacy(ax,
 
 
 # -----------------------------------------------------------------------------
-# Cell-level API compatible with the legacy interface
+# Cell-level plotting API
 # -----------------------------------------------------------------------------
 def scatter_cell(
     ax,
@@ -189,11 +206,11 @@ def scatter_cell(
 ):
     """Render a cell-level scatter plot and optional velocity arrows.
 
-    This mirrors the legacy ``cdplt.scatter_cell`` routine while accepting
-    higher-level color specifications typical for modern plotting APIs.
+    This follows the GRAVITY cell-level plotting convention while accepting
+    categorical mappings, continuous columns, and fixed color values.
     """
 
-    # --- Color handling (fully compatible with legacy parameter semantics) ---
+    # --- Color handling ---
     if isinstance(colors, list):
         colors = build_colormap(colors)
 
@@ -228,13 +245,13 @@ def scatter_cell(
         cbar = plt.colorbar(im, cax=cax, orientation="horizontal", shrink=0.1)
         cbar.set_ticks([])
 
-    # --- Legacy arrows ---
+    # --- Grid-curve arrows ---
     if velocity:
         # Only draw for sampled cells with velocity
         sample_cells = cellDancer_df['velocity1'][:n_cells].dropna().index
         emb_ds = emb[sample_cells]
         vel = _extract_from_df(cellDancer_df, ['velocity1', 'velocity2'], gene)  # aligned with emb_ds after dropna
-        _grid_curve_legacy(ax, emb_ds, vel, arrow_grid, min_mass)
+        _grid_curve_arrows(ax, emb_ds, vel, arrow_grid, min_mass)
 
     if custom_xlim is not None:
         ax.set_xlim(*custom_xlim)
@@ -265,7 +282,7 @@ def plot_velocity_cell(
     projection_neighbor_choice: str = "embedding",
     expression_scale: Optional[str] = "power10",
     projection_neighbor_size: int = 200,
-    min_mass: float = 0.5,                    # Absolute threshold (legacy)
+    min_mass: float = 0.5,
     axis_off: bool = True,
     output_path: Optional[str] = None,
     show: bool = False,
@@ -273,22 +290,18 @@ def plot_velocity_cell(
     """Plot cell-level velocities in the embedding space.
 
     The function computes velocity projections via :func:`gravity.velocity.compute_cell_velocity_`
-    and overlays legacy grid-curved arrows. Color handling supports both
-    discrete palettes and continuous scalars.
+    and overlays grid-curved arrows. Color handling supports both discrete
+    palettes and continuous scalars.
     """
 
     path = resolve_path(stage_csv)
     log_verbose(f"[gravity] plotting velocities from {path}", level=1)
     df = pd.read_csv(path)
-    gene_to_plot = gene
+    gene = _resolve_gene_name(df, gene)
 
-    if gene is None:
-        gene = df["gene_name"].iloc[0]
-
-    # Use a large figure size to mirror legacy scripts
     fig, ax = plt.subplots(figsize=(20, 20))
 
-    # 1) Compute cell-level velocity (legacy logic)
+    # 1) Compute cell-level velocity.
     res = compute_cell_velocity_(
         df,
         projection_neighbor_choice=projection_neighbor_choice,
@@ -329,7 +342,7 @@ def plot_velocity_cell(
         cellDancer_df=plot_df,
         colors=colors_arg,
         alpha=alpha,
-        s=point_size,             # Keep point size consistent with legacy
+        s=point_size,
         gene=gene,
         velocity=True,            # Draw cell-level arrows
         legend='off',             # Enable if a legend is desired
@@ -375,7 +388,7 @@ def plot_velocity_gene(
     projection_neighbor_choice: str = "embedding",
     expression_scale: Optional[str] = "power10",
     projection_neighbor_size: int = 200,
-    min_mass: float = 0.5,                    # 绝对阈值（与原版一致）
+    min_mass: float = 0.5,
     axis_off: bool = True,
     output_path: Optional[str] = None,
     show: bool = False,
@@ -383,85 +396,82 @@ def plot_velocity_gene(
     """Plot gene-level phase portraits with projected velocity arrows.
 
     The arrows connect current to predicted expression for a sampled subset of
-    cells, following the legacy straight-arrow strategy.
+    cells.
     """
 
     path = resolve_path(stage_csv)
     log_verbose(f"[gravity] plotting velocities from {path}", level=1)
     df = pd.read_csv(path)
-    gene_to_plot = gene
+    gene = _resolve_gene_name(df, gene)
 
-    if gene is None:
-        gene = df["gene_name"].iloc[0]
-
-    # Use a large figure size to mirror legacy scripts
     fig, ax = plt.subplots(figsize=(20, 20))
 
-    if gene_to_plot:
-        # ====== Gene-level straight-arrow implementation (legacy) ======
-        if x not in {"splice", "unsplice"} or y not in {"splice", "unsplice"}:
-            raise ValueError("For gene phase portrait mode, x and y must be 'splice' or 'unsplice'.")
-        gene_df = df[df["gene_name"] == gene_to_plot].copy()
+    # ====== Gene-level straight-arrow implementation ======
+    if x not in {"splice", "unsplice"} or y not in {"splice", "unsplice"}:
+        raise ValueError("For gene phase portrait mode, x and y must be 'splice' or 'unsplice'.")
+    gene_df = df[df["gene_name"] == gene].copy()
+    if gene_df.empty:
+        raise ValueError(f"Gene {gene!r} resolved but no rows were available for plotting.")
 
-        # Colors: discrete → palette/autogenerated; continuous → colormap
-        mapped, meta = map_colors_auto(
-            gene_df,
-            color_by=color_by,
-            palette=palette,
-            categories=categories,
-            cmap_continuous=cmap,
-        )
-        scatter_kwargs = dict(s=point_size, alpha=alpha, edgecolor="none")
-        coords = gene_df[[x, y]].to_numpy()
+    # Colors: discrete → palette/autogenerated; continuous → colormap
+    mapped, meta = map_colors_auto(
+        gene_df,
+        color_by=color_by,
+        palette=palette,
+        categories=categories,
+        cmap_continuous=cmap,
+    )
+    scatter_kwargs = dict(s=point_size, alpha=alpha, edgecolor="none")
+    coords = gene_df[[x, y]].to_numpy()
 
-        if isinstance(meta, tuple) and meta[0] == "discrete":
-            _, handles = meta
-            ax.scatter(coords[:, 0], coords[:, 1], color=mapped, **scatter_kwargs)
-            if handles:
-                ax.legend(handles=handles, title=color_by, loc="best", frameon=False)
-        elif isinstance(meta, tuple) and meta[0] == "continuous":
-            _, cm_name = meta
-            sc = ax.scatter(coords[:, 0], coords[:, 1], c=mapped, cmap=cm_name, **scatter_kwargs)
-            plt.colorbar(sc, ax=ax, label=color_by)
-        else:
-            ax.scatter(coords[:, 0], coords[:, 1], color=mapped, **scatter_kwargs)
+    if isinstance(meta, tuple) and meta[0] == "discrete":
+        _, handles = meta
+        ax.scatter(coords[:, 0], coords[:, 1], color=mapped, **scatter_kwargs)
+        if handles:
+            ax.legend(handles=handles, title=color_by, loc="best", frameon=False)
+    elif isinstance(meta, tuple) and meta[0] == "continuous":
+        _, cm_name = meta
+        sc = ax.scatter(coords[:, 0], coords[:, 1], c=mapped, cmap=cm_name, **scatter_kwargs)
+        plt.colorbar(sc, ax=ax, label=color_by)
+    else:
+        ax.scatter(coords[:, 0], coords[:, 1], color=mapped, **scatter_kwargs)
 
-        # Straight arrows (legacy strategy)
-        u_s = gene_df[["unsplice", "splice", "unsplice_predict", "splice_predict"]].to_numpy()
-        idx = np.asarray(sampling_neighbors(u_s[:, 0:2], step=arrow_grid, percentile=15))
-        idx = idx[idx < u_s.shape[0]]
-        U = u_s[idx, :]
+    # Straight arrows.
+    u_s = gene_df[["unsplice", "splice", "unsplice_predict", "splice_predict"]].to_numpy()
+    idx = np.asarray(sampling_neighbors(u_s[:, 0:2], step=arrow_grid, percentile=15))
+    idx = idx[idx < u_s.shape[0]]
+    U = u_s[idx, :]
 
-        if x == "splice" and y == "unsplice":
-            P_x, P_y = U[:, 1], U[:, 0]
-            dX, dY = (U[:, 3] - U[:, 1]), (U[:, 2] - U[:, 0])
-        elif x == "unsplice" and y == "splice":
-            P_x, P_y = U[:, 0], U[:, 1]
-            dX, dY = (U[:, 2] - U[:, 0]), (U[:, 3] - U[:, 1])
-        else:
-            P_x, P_y = U[:, 1], U[:, 0]
-            dX, dY = (U[:, 3] - U[:, 1]), (U[:, 2] - U[:, 0])
+    if x == "splice" and y == "unsplice":
+        P_x, P_y = U[:, 1], U[:, 0]
+        dX, dY = (U[:, 3] - U[:, 1]), (U[:, 2] - U[:, 0])
+    elif x == "unsplice" and y == "splice":
+        P_x, P_y = U[:, 0], U[:, 1]
+        dX, dY = (U[:, 2] - U[:, 0]), (U[:, 3] - U[:, 1])
+    else:
+        P_x, P_y = U[:, 1], U[:, 0]
+        dX, dY = (U[:, 3] - U[:, 1]), (U[:, 2] - U[:, 0])
 
-        if P_x.size > 0:
-            ax.scatter(P_x, P_y, facecolors="none", edgecolors=arrow_color, s=point_size * 1.2)
-            ax.quiver(P_x, P_y, dX * arrow_scale, dY * arrow_scale,
-                      angles="xy", color=arrow_color, alpha=0.8)
+    if P_x.size > 0:
+        ax.scatter(P_x, P_y, facecolors="none", edgecolors=arrow_color, s=point_size * 1.2)
+        ax.quiver(P_x, P_y, dX * arrow_scale, dY * arrow_scale,
+                  angles="xy", color=arrow_color, alpha=0.8)
 
-        ax.set_xlabel("Splice" if x == "splice" else "Unsplice")
-        ax.set_ylabel("Splice" if y == "splice" else "Unsplice")
-        ax.set_title(f"GRAVITY gene velocities (expression) – {gene} [{x} vs {y}]")
+    ax.set_xlabel("Splice" if x == "splice" else "Unsplice")
+    ax.set_ylabel("Splice" if y == "splice" else "Unsplice")
+    ax.set_title(f"GRAVITY gene velocities (expression) – {gene} [{x} vs {y}]")
 
-        if axis_off:
-            ax.axis("off")
-        ax.grid(False)
+    if axis_off:
+        ax.axis("off")
+    ax.grid(False)
 
-        if output_path is not None:
-            out = Path(output_path).expanduser().resolve()
-            out.parent.mkdir(parents=True, exist_ok=True)
-            fig.savefig(out, dpi=300, bbox_inches="tight")
-            log_verbose(f"[gravity] saved velocity plot to {out}", level=2)
+    if output_path is not None:
+        out = Path(output_path).expanduser().resolve()
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out, dpi=300, bbox_inches="tight")
+        log_verbose(f"[gravity] saved velocity plot to {out}", level=2)
 
-        if show:
-            plt.show()
+    if show:
+        plt.show()
 
     return ax

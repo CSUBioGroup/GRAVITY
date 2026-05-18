@@ -8,6 +8,13 @@ pretrained/reference checkpoint, pass that file as `gene_order_path`; otherwise
 the same genes in a different CSV order can produce misaligned attention
 summaries.
 
+For pancreas reference reproduction, run stage inference/export from the
+provided stage-1 and stage-2 checkpoints. Attention-network examples should use
+the checkpoint-derived `attentions/mean_attention_by_celltype/*.npz` files, not
+newly trained smoke-test outputs. The pancreas reference notebook expects the
+Beta example matrix at
+`data/pancreas/reference_outputs/pancreas_mean_attention_by_celltype/Beta_mean_attention.npz`.
+
 ## Attention matrices and TF ranks
 
 ```python

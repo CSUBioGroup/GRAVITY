@@ -35,6 +35,8 @@ cfg = PipelineConfig(
     workdir="gravity_outputs_pancreas",
     prior_network="prior_data/nichenet_mouse.zip",
     gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt",
+    stage1_pretrained_checkpoint="data/pancreas/reference_checkpoints/pancreas_stage1.ckpt",
+    stage2_pretrained_checkpoint="data/pancreas/reference_checkpoints/pancreas_stage2.ckpt",
     accelerator="gpu",
     devices=1,
     batch_size=16,
@@ -70,6 +72,7 @@ Key tips:
 - Set `devices` and `strategy` to match your hardware. Start with `devices=1`; use `devices=[0,1]`, `strategy="ddp"` only for multi-GPU runs.
 - Reduce `batch_size` or provide `gene_subset` when GPU memory is limited.
 - Pass `gene_order_path` when using pretrained/reference checkpoints; checkpoint tensors are aligned by gene index, not only by gene name.
+- For checkpoint-based pancreas reproduction, pass both `stage1_pretrained_checkpoint` and `stage2_pretrained_checkpoint`; this runs inference/export from the provided weights instead of retraining.
 - The unsupervised and contrastive objectives are learning-rate sensitive. For reference-style runs, use `stage1_lr < 1e-5` and tune `stage2_lr` within `1e-3` to `1e-5`.
 
 The resulting dictionary contains paths to `combine.csv`, stage checkpoints, `future_positions.npy`, and attention exports.
@@ -79,8 +82,9 @@ available in `data/pancreas/reference_checkpoints/`. The matching large
 reference exports are named `pancreas_stage1_reference.csv` and
 `pancreas_stage2_reference.csv`; keep them outside git or distribute them
 separately. Use
-`gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt"` for
-the provided pancreas checkpoint reproduction.
+`gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt"`
+together with the two pretrained checkpoint fields for provided pancreas
+checkpoint reproduction.
 
 Background links:
 

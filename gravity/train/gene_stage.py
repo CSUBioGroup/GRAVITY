@@ -74,6 +74,7 @@ class GeneStageConfig:
     output_dir: str = 'gravity_outputs'
     stage2_csv: str = 'stage2.csv'
     checkpoint_name: str = 'stage2.ckpt'
+    pretrained_checkpoint: Optional[str] = None
     gene_subset: Optional[Sequence[str]] = None
     gene_order_path: Optional[str] = None
     batch_size: int = 32
@@ -147,7 +148,7 @@ def train_gene_stage(config: GeneStageConfig) -> Dict[str, Path]:
     assert_gene_order_matches(genes_path, dataset.hvg, label="stage2 genes.txt")
 
     skip_stage2 = False
-    if stage2_csv_path.exists() and checkpoint_path.exists():
+    if config.pretrained_checkpoint is None and stage2_csv_path.exists() and checkpoint_path.exists():
         try:
             df_stats = pd.read_csv(stage2_csv_path, usecols=['cellIndex', 'alpha', 'beta'])
             existing_cells = df_stats['cellIndex'].nunique()
@@ -241,6 +242,68 @@ def train_gene_stage(config: GeneStageConfig) -> Dict[str, Path]:
         ffn_dimension=config.ffn_dimension,
     )
 
+    devices = config.devices if config.devices is not None else 1
+    trainer_kwargs = dict(
+        accelerator=config.accelerator,
+        devices=devices,
+        max_epochs=config.epochs,
+        logger=False,
+        enable_checkpointing=False,
+        log_every_n_steps=config.log_every_n_steps,
+        enable_progress_bar=config.progress_bar,
+        default_root_dir=str(output_dir),
+    )
+    if config.precision is not None:
+        trainer_kwargs['precision'] = config.precision
+    if config.gradient_clip_val is not None:
+        trainer_kwargs['gradient_clip_val'] = config.gradient_clip_val
+    if config.strategy is not None:
+        trainer_kwargs['strategy'] = config.strategy
+
+    def _export(model: FullModelGeneWise, description: str, *, save_checkpoint: bool = True) -> None:
+        single_test_loader = DataLoader(dataset,
+                                        batch_size=config.batch_size,
+                                        shuffle=False,
+                                        num_workers=config.num_workers)
+
+        log_verbose(
+            f"[gravity] {description}: refining velocities & writing outputs...",
+            level=1,
+        )
+
+        export_callbacks = []
+        if config.progress_bar and TQDMProgressBar is not None:
+            export_callbacks.append(ExportProgressBar("Stage2 infer/export"))
+
+        single_tester = pl.Trainer(
+            accelerator='auto', devices=1, logger=False, enable_checkpointing=False,
+            enable_progress_bar=config.progress_bar, default_root_dir=str(output_dir),
+            callbacks=export_callbacks,
+        )
+        single_tester.test(model, dataloaders=single_test_loader)
+        if save_checkpoint:
+            single_tester.save_checkpoint(str(checkpoint_path))
+        log_verbose("[gravity] stage2 infer/export finished; synchronising files...", level=1)
+
+        for _ in range(60):
+            if stage2_csv_path.exists():
+                break
+            time.sleep(1.0)
+        if not stage2_csv_path.exists():
+            raise RuntimeError(f"Stage2 CSV was not written: {stage2_csv_path}")
+
+    if config.pretrained_checkpoint is not None:
+        pretrained_path = resolve_path(config.pretrained_checkpoint)
+        log_verbose(f"[gravity] loading stage2 checkpoint for inference/export: {pretrained_path}", level=1)
+        model = FullModelGeneWise.load_from_checkpoint(str(pretrained_path), **model_kwargs)
+        _export(model, "stage2 checkpoint infer/export")
+        return {
+            'stage2_csv': stage2_csv_path,
+            'checkpoint': checkpoint_path,
+            'genes_path': genes_path,
+            'gene_map': mapper_path,
+        }
+
     model = FullModelGeneWise.load_from_checkpoint(str(stage1_checkpoint_path), **model_kwargs)
 
     for param in model.parameters():
@@ -265,61 +328,14 @@ def train_gene_stage(config: GeneStageConfig) -> Dict[str, Path]:
             "No solver parameters left trainable; check linear_layer_names or configuration."
         )
 
-    devices = config.devices if config.devices is not None else 1
-    trainer_kwargs = dict(
-        accelerator=config.accelerator,
-        devices=devices,
-        max_epochs=config.epochs,
-        logger=False,
-        enable_checkpointing=False,
-        log_every_n_steps=config.log_every_n_steps,
-        enable_progress_bar=config.progress_bar,
-        default_root_dir=str(output_dir),
-    )
-    if config.precision is not None:
-        trainer_kwargs['precision'] = config.precision
-    if config.gradient_clip_val is not None:
-        trainer_kwargs['gradient_clip_val'] = config.gradient_clip_val
-    if config.strategy is not None:
-        trainer_kwargs['strategy'] = config.strategy
-
     trainer = pl.Trainer(**trainer_kwargs)
     trainer.fit(model, train_loader, val_loader)
 
     if getattr(trainer, "global_rank", 0) == 0:
         single_model = FullModelGeneWise(**model_kwargs)
         single_model.load_state_dict(model.state_dict())
-
-        single_test_loader = DataLoader(dataset,
-                                        batch_size=config.batch_size,
-                                        shuffle=False,
-                                        num_workers=config.num_workers)
-
-        log_verbose(
-            "[gravity] stage2 infer/export: refining velocities & writing outputs...",
-            level=1,
-        )
-
-        export_callbacks = []
-        if config.progress_bar and TQDMProgressBar is not None:
-            export_callbacks.append(ExportProgressBar("Stage2 infer/export"))
-
-        single_tester = pl.Trainer(
-            accelerator='auto', devices=1, logger=False, enable_checkpointing=False,
-            enable_progress_bar=config.progress_bar, default_root_dir=str(output_dir),
-            callbacks=export_callbacks,
-        )
-        single_tester.test(single_model, dataloaders=single_test_loader)
-        log_verbose("[gravity] stage2 infer/export finished; synchronising files...", level=1)
-
+        _export(single_model, "stage2 infer/export", save_checkpoint=False)
         trainer.save_checkpoint(str(checkpoint_path))
-
-        for _ in range(60):
-            if stage2_csv_path.exists():
-                break
-            time.sleep(1.0)
-        if not stage2_csv_path.exists():
-            raise RuntimeError(f"Stage2 CSV was not written: {stage2_csv_path}")
 
     world_size = 1
     if hasattr(trainer, "strategy") and hasattr(trainer.strategy, "world_size"):

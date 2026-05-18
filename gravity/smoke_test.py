@@ -15,6 +15,18 @@ from gravity import PipelineConfig, run_pipeline
 RAW_COUNTS = os.environ.get("GRAVITY_RAW_COUNTS", "data/PancreaticEndocrinogenesis_cell_type_u_s.csv")
 PRIOR_NET = os.environ.get("GRAVITY_PRIOR_NET", "prior_data/nichenet_mouse.zip")
 WORKDIR = os.environ.get("GRAVITY_WORKDIR", "gravity_outputs_pancreas")
+GENE_ORDER = os.environ.get(
+    "GRAVITY_GENE_ORDER",
+    "data/pancreas/reference_checkpoints/pancreas_genes.txt",
+) or None
+STAGE1_PRETRAINED = os.environ.get(
+    "GRAVITY_STAGE1_PRETRAINED_CHECKPOINT",
+    "data/pancreas/reference_checkpoints/pancreas_stage1.ckpt",
+) or None
+STAGE2_PRETRAINED = os.environ.get(
+    "GRAVITY_STAGE2_PRETRAINED_CHECKPOINT",
+    "data/pancreas/reference_checkpoints/pancreas_stage2.ckpt",
+) or None
 GENE_LIST = [
     gene.strip()
     for gene in os.environ.get("GRAVITY_PLOT_GENES", "GCG,INS2").split(",")
@@ -43,12 +55,21 @@ def run_and_report(cfg: PipelineConfig, label: str) -> None:
 
 require_file(RAW_COUNTS, "GRAVITY_RAW_COUNTS")
 require_file(PRIOR_NET, "GRAVITY_PRIOR_NET")
+if GENE_ORDER is not None:
+    require_file(GENE_ORDER, "GRAVITY_GENE_ORDER")
+if STAGE1_PRETRAINED is not None:
+    require_file(STAGE1_PRETRAINED, "GRAVITY_STAGE1_PRETRAINED_CHECKPOINT")
+if STAGE2_PRETRAINED is not None:
+    require_file(STAGE2_PRETRAINED, "GRAVITY_STAGE2_PRETRAINED_CHECKPOINT")
 
 # First run: enable plotting in expression space for selected genes
 cfg_pipe = PipelineConfig(
     raw_counts=RAW_COUNTS,
     workdir=WORKDIR,
     prior_network=PRIOR_NET,
+    gene_order_path=GENE_ORDER,
+    stage1_pretrained_checkpoint=STAGE1_PRETRAINED,
+    stage2_pretrained_checkpoint=STAGE2_PRETRAINED,
     accelerator="gpu",
     devices=DEVICES,
     make_plot=True,

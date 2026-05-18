@@ -42,4 +42,4 @@ reference exports are named `pancreas_stage1_reference.csv` and
 `pancreas_stage2_reference.csv`; keep them outside git or distribute them
 separately. Use
 `gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt"` for
-published pancreas checkpoint reproduction.
+the provided pancreas checkpoint reproduction.

@@ -9,6 +9,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .ipynb_checkpoints/
+docs/_build/
 .venv/
 venv/
 env/
@@ -30,7 +31,7 @@ data/**/*.h5ad
 data/pancreas/reference_outputs/
 *.h5ad
 
-# Small published reference weights
+# Small reference weights
 !data/pancreas/
 !data/pancreas/reference_checkpoints/
 !data/pancreas/reference_checkpoints/*.ckpt

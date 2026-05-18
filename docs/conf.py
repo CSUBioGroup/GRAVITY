@@ -9,7 +9,7 @@ sys.path.insert(0, ROOT)
 
 # -- Project information -----------------------------------------------------
 
-project = "GRAVITY predicts RNA velocity and regulatory rewiring by dynamic regulatory mechanism-enhanced deep learning"
+project = "GRAVITY"
 copyright = f"{datetime.now():%Y}, GRAVITY Contributors"
 author = "GRAVITY Contributors"
 release = "0.1.0"
@@ -17,7 +17,7 @@ release = "0.1.0"
 # -- General configuration ---------------------------------------------------
 
 extensions = [
-    "myst_parser",
+    "myst_nb",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
@@ -49,8 +49,12 @@ language = "en"
 
 html_theme = "furo"
 html_static_path = ["_static"]
-html_title = project
+html_title = "GRAVITY"
 html_short_title = "GRAVITY"
+
+# Render tutorial notebooks as documentation pages without re-running GPU/data
+# dependent analysis on ReadTheDocs.
+nb_execution_mode = "off"
 
 # -- Autodoc tweaks ----------------------------------------------------------
 

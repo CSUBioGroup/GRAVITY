@@ -74,7 +74,10 @@ data/pancreas/reference_checkpoints/pancreas_genes.txt
 
 These files can be used directly as the pancreas stage-1 and stage-2 weights.
 They were converted to the current GRAVITY module names and can be loaded by
-the current package directly.
+the current package directly. Use `stage1_pretrained_checkpoint` and
+`stage2_pretrained_checkpoint` in `PipelineConfig`, or `pretrained_checkpoint`
+in the modular stage configs, to run inference/export from these weights instead
+of training new weights.
 
 `pancreas_genes.txt` is part of the checkpoint contract. GRAVITY models and
 attention matrices are aligned by gene index, so the same gene set in a
@@ -88,10 +91,14 @@ pancreas_stage1_reference.csv
 pancreas_stage2_reference.csv
 pancreas_attention_scores.h5ad
 pancreas_insulin_signaling_attention_activity.csv
+pancreas_mean_attention_by_celltype/Beta_mean_attention.npz
 ```
 
 Those exports are large and are intentionally not tracked in git. Treat them as
 pancreas reference results produced from the provided checkpoints.
+The `pancreas_mean_attention_by_celltype/` matrices are cell-type averaged
+stage-1 attention networks and are used by the notebook's TF target-gene
+examples.
 `pancreas_insulin_signaling_attention_activity.csv` is a precomputed per-cell
 summary from raw stage-1 attention tensors. It is computed by summing attention
 weights between insulin signaling genes, restricted to regulator-target pairs

@@ -71,6 +71,7 @@ class CellStageConfig:
     output_dir: str = 'gravity_outputs'
     stage1_csv: str = 'stage1.csv'
     checkpoint_name: str = 'stage1.ckpt'
+    pretrained_checkpoint: Optional[str] = None
     attention_dir: str = 'attentions'
     gene_subset: Optional[Sequence[str]] = None
     gene_order_path: Optional[str] = None
@@ -163,7 +164,12 @@ def train_cell_stage(config: CellStageConfig) -> Dict[str, Path]:
     attn_h5ad = attention_dir / "attention_TF_scores_with_types.h5ad"
 
     skip_stage1 = False
-    if stage1_csv_path.exists() and checkpoint_path.exists() and (not config.attention_output or attn_h5ad.exists()):
+    if (
+        config.pretrained_checkpoint is None
+        and stage1_csv_path.exists()
+        and checkpoint_path.exists()
+        and (not config.attention_output or attn_h5ad.exists())
+    ):
         try:
             df_stats = pd.read_csv(stage1_csv_path, usecols=['cellIndex', 'alpha', 'beta'])
             existing_cells = df_stats['cellIndex'].nunique()
@@ -262,8 +268,6 @@ def train_cell_stage(config: CellStageConfig) -> Dict[str, Path]:
         ffn_dimension=config.ffn_dimension,
     )
 
-    model = FullModelCellWise(**model_kwargs)
-
     devices = config.devices if config.devices is not None else 1
     trainer_kwargs = dict(
         accelerator=config.accelerator,
@@ -282,21 +286,14 @@ def train_cell_stage(config: CellStageConfig) -> Dict[str, Path]:
     if config.strategy is not None:
         trainer_kwargs['strategy'] = config.strategy
 
-    trainer = pl.Trainer(**trainer_kwargs)
-    trainer.fit(model, train_loader, val_loader)
-
-    # Only rank 0 performs export/saving
-    if getattr(trainer, "global_rank", 0) == 0:
-        single_model = FullModelCellWise(**model_kwargs)
-        single_model.load_state_dict(model.state_dict())
-
+    def _export(model: FullModelCellWise, description: str, *, save_checkpoint: bool = True) -> None:
         single_test_loader = DataLoader(dataset,
                                         batch_size=config.batch_size,
                                         shuffle=False,
                                         num_workers=config.num_workers)
 
         log_verbose(
-            "[gravity] stage1 infer/export: computing velocities & attention matrices...",
+            f"[gravity] {description}: computing velocities & attention matrices...",
             level=1,
         )
 
@@ -309,10 +306,10 @@ def train_cell_stage(config: CellStageConfig) -> Dict[str, Path]:
             enable_progress_bar=config.progress_bar, default_root_dir=str(output_dir),
             callbacks=export_callbacks,
         )
-        single_tester.test(single_model, dataloaders=single_test_loader)
+        single_tester.test(model, dataloaders=single_test_loader)
+        if save_checkpoint:
+            single_tester.save_checkpoint(str(checkpoint_path))
         log_verbose("[gravity] stage1 infer/export finished; synchronising files...", level=1)
-
-        trainer.save_checkpoint(str(checkpoint_path))
 
         for _ in range(60):
             if stage1_csv_path.exists():
@@ -320,6 +317,31 @@ def train_cell_stage(config: CellStageConfig) -> Dict[str, Path]:
             time.sleep(1.0)
         if not stage1_csv_path.exists():
             raise RuntimeError(f"Stage1 CSV was not written: {stage1_csv_path}")
+
+    if config.pretrained_checkpoint is not None:
+        pretrained_path = resolve_path(config.pretrained_checkpoint)
+        log_verbose(f"[gravity] loading stage1 checkpoint for inference/export: {pretrained_path}", level=1)
+        model = FullModelCellWise.load_from_checkpoint(str(pretrained_path), **model_kwargs)
+        _export(model, "stage1 checkpoint infer/export")
+        return {
+            'stage1_csv': stage1_csv_path,
+            'checkpoint': checkpoint_path,
+            'attention_dir': attention_dir if config.attention_output else None,
+            'genes_path': genes_path,
+            'gene_map': mapper_path,
+        }
+
+    model = FullModelCellWise(**model_kwargs)
+
+    trainer = pl.Trainer(**trainer_kwargs)
+    trainer.fit(model, train_loader, val_loader)
+
+    # Only rank 0 performs export/saving
+    if getattr(trainer, "global_rank", 0) == 0:
+        single_model = FullModelCellWise(**model_kwargs)
+        single_model.load_state_dict(model.state_dict())
+        _export(single_model, "stage1 infer/export", save_checkpoint=False)
+        trainer.save_checkpoint(str(checkpoint_path))
 
     # ensure all ranks wait until exports finish
     # Synchronize ranks if running distributed

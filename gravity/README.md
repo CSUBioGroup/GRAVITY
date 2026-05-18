@@ -131,6 +131,8 @@ cfg = PipelineConfig(
     workdir="gravity_outputs_pancreas",
     prior_network="prior_data/nichenet_mouse.zip",
     gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt",
+    stage1_pretrained_checkpoint="data/pancreas/reference_checkpoints/pancreas_stage1.ckpt",
+    stage2_pretrained_checkpoint="data/pancreas/reference_checkpoints/pancreas_stage2.ckpt",
     accelerator="gpu",
     devices=1,
     batch_size=16,
@@ -203,7 +205,10 @@ data/pancreas/reference_checkpoints/pancreas_genes.txt
 ```
 
 These checkpoints can be used directly as the pancreas stage-1 and stage-2
-weights. The matching reference exports are named
+weights. For checkpoint-based reproduction, set
+`stage1_pretrained_checkpoint` and `stage2_pretrained_checkpoint` in
+`PipelineConfig`; GRAVITY will run inference/export from those weights instead
+of retraining. The matching reference exports are named
 `pancreas_stage1_reference.csv` and `pancreas_stage2_reference.csv`; they are
 large pancreas reference results and are intentionally not tracked in git.
 When reproducing the provided pancreas checkpoints, pass
@@ -211,11 +216,13 @@ When reproducing the provided pancreas checkpoints, pass
 the model and attention tensors use the checkpoint-matching gene index order.
 The downstream pancreas notebook also uses precomputed reference outputs under
 `data/pancreas/reference_outputs/`, including `pancreas_attention_scores.h5ad`
-and `pancreas_insulin_signaling_attention_activity.csv`. The insulin activity
-table is a per-cell summary computed from raw stage-1 attention tensors by
-summing insulin-signaling attention weights over prior-network edges; the
-notebook documents the formula for users who want to recompute it from saved
-per-cell attention matrices.
+and `pancreas_insulin_signaling_attention_activity.csv`. Cell-type mean
+attention matrices under `pancreas_mean_attention_by_celltype/` are produced
+from the same stage-1 checkpoint and support TF target-gene examples such as
+PDX1 targets in Beta cells. The insulin activity table is a per-cell summary
+computed from raw stage-1 attention tensors by summing insulin-signaling
+attention weights over prior-network edges; the notebook documents the formula
+for users who want to recompute it from saved per-cell attention matrices.
 
 Modular usage
 -------------
@@ -233,6 +240,8 @@ RAW_COUNTS = "data/PancreaticEndocrinogenesis_cell_type_u_s.csv"
 WORKDIR = "gravity_outputs_pancreas"
 PRIOR_NET = "prior_data/nichenet_mouse.zip"
 GENE_ORDER = "data/pancreas/reference_checkpoints/pancreas_genes.txt"
+STAGE1_CKPT = "data/pancreas/reference_checkpoints/pancreas_stage1.ckpt"
+STAGE2_CKPT = "data/pancreas/reference_checkpoints/pancreas_stage2.ckpt"
 genes = resolve_gene_order(None, GENE_ORDER)
 
 # 1) Preprocess
@@ -248,6 +257,7 @@ cell_cfg = CellStageConfig(
     middle_csv=str(middle_csv),
     prior_network=PRIOR_NET,
     output_dir=WORKDIR,
+    pretrained_checkpoint=STAGE1_CKPT,
     gene_subset=genes,
     gene_order_path=GENE_ORDER,
     accelerator="gpu",
@@ -268,6 +278,7 @@ gene_cfg = GeneStageConfig(
     future_positions=f"{WORKDIR}/future_positions.npy",
     prior_network=PRIOR_NET,
     output_dir=WORKDIR,
+    pretrained_checkpoint=STAGE2_CKPT,
     gene_subset=genes,
     gene_order_path=GENE_ORDER,
     accelerator="gpu",
@@ -288,15 +299,18 @@ Configuration highlights
 - `PipelineConfig`
   - `gene_subset`: restrict the gene set used for training
   - `gene_order_path`: load a newline-delimited gene order file; use this for pretrained/reference checkpoints because tensors are gene-index aligned
+  - `stage1_pretrained_checkpoint` / `stage2_pretrained_checkpoint`: run stage inference/export from supplied checkpoints instead of training
   - `stage1_epochs` / `stage2_epochs`: number of epochs per stage
   - `val_fraction_stage1` / `val_fraction_stage2`: optional hold-out ratio (default `0.0`, meaning no validation split)
   - `future_tau`: scaling factor controlling the radius for future-neighbor search
   - `accelerator` / `devices` / `strategy`: forwarded to PyTorch Lightning (e.g., `accelerator="gpu"`, `devices=1`; use `devices=[0,1]`, `strategy="ddp"` for multi-GPU runs)
   - `make_plot`, `plot_genes`: enable plotting and choose genes; `'all'` plots every gene
 - `CellStageConfig`
+  - `pretrained_checkpoint`: stage-1 checkpoint to use for inference/export
   - `attention_output`: whether to export TF attention matrices
   - `attention_topk`: number of TFs kept per cell
 - `GeneStageConfig`
+  - `pretrained_checkpoint`: stage-2 checkpoint to use for inference/export
   - `future_positions`: path to the `.npy` produced by future projection
   - `stage1_checkpoint`: cell‑wise checkpoint
 

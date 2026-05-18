@@ -100,6 +100,8 @@ cfg = PipelineConfig(
     workdir="gravity_outputs_pancreas",
     prior_network="prior_data/nichenet_mouse.zip",
     gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt",
+    stage1_pretrained_checkpoint="data/pancreas/reference_checkpoints/pancreas_stage1.ckpt",
+    stage2_pretrained_checkpoint="data/pancreas/reference_checkpoints/pancreas_stage2.ckpt",
     accelerator="gpu",
     devices=1,
     batch_size=16,
@@ -157,7 +159,10 @@ data/pancreas/reference_checkpoints/pancreas_stage2.ckpt
 data/pancreas/reference_checkpoints/pancreas_genes.txt
 ```
 
-这两个 checkpoint 可以直接作为胰腺 stage-1 和 stage-2 权重使用。对应的参考导出
+这两个 checkpoint 可以直接作为胰腺 stage-1 和 stage-2 权重使用。若要做
+checkpoint-based reproduction，请在 `PipelineConfig` 中设置
+`stage1_pretrained_checkpoint` 和 `stage2_pretrained_checkpoint`；GRAVITY
+会直接从这些权重做 inference/export，而不是重新训练。对应的参考导出
 命名为 `pancreas_stage1_reference.csv` 和 `pancreas_stage2_reference.csv`；
 它们是较大的胰腺参考结果，不直接纳入 git。
 复现已发布的胰腺 checkpoint 时，还需要传入
@@ -165,10 +170,13 @@ data/pancreas/reference_checkpoints/pancreas_genes.txt
 模型权重和 attention tensor 按 gene index 对齐，同一批基因但顺序不同并不等价。
 下游胰腺 notebook 还会读取 `data/pancreas/reference_outputs/` 下的预计算
 reference outputs，包括 `pancreas_attention_scores.h5ad` 和
-`pancreas_insulin_signaling_attention_activity.csv`。其中 insulin activity
-表是从 raw stage-1 per-cell attention tensors 计算得到的 per-cell summary：
-在 insulin signaling gene set 内，沿 prior-network edges 对 attention 权重求和。
-notebook 中写明了公式，方便用户在保存 per-cell attention matrix 后自行复算。
+`pancreas_insulin_signaling_attention_activity.csv`。其中
+`pancreas_mean_attention_by_celltype/` 下的 cell-type mean attention matrix
+来自同一个 stage-1 checkpoint，可用于 PDX1 在 Beta cells 中的 top target
+gene 等例子。insulin activity 表是从 raw stage-1 per-cell attention tensors
+计算得到的 per-cell summary：在 insulin signaling gene set 内，沿
+prior-network edges 对 attention 权重求和。notebook 中写明了公式，方便用户在
+保存 per-cell attention matrix 后自行复算。
 
 模块化用法
 ----------
@@ -186,6 +194,8 @@ RAW_COUNTS = "data/PancreaticEndocrinogenesis_cell_type_u_s.csv"
 WORKDIR = "gravity_outputs_pancreas"
 PRIOR_NET = "prior_data/nichenet_mouse.zip"
 GENE_ORDER = "data/pancreas/reference_checkpoints/pancreas_genes.txt"
+STAGE1_CKPT = "data/pancreas/reference_checkpoints/pancreas_stage1.ckpt"
+STAGE2_CKPT = "data/pancreas/reference_checkpoints/pancreas_stage2.ckpt"
 genes = resolve_gene_order(None, GENE_ORDER)
 
 middle_csv = preprocess_counts(
@@ -199,6 +209,7 @@ cell_cfg = CellStageConfig(
     middle_csv=str(middle_csv),
     prior_network=PRIOR_NET,
     output_dir=WORKDIR,
+    pretrained_checkpoint=STAGE1_CKPT,
     gene_subset=genes,
     gene_order_path=GENE_ORDER,
     accelerator="gpu",
@@ -217,6 +228,7 @@ gene_cfg = GeneStageConfig(
     future_positions=f"{WORKDIR}/future_positions.npy",
     prior_network=PRIOR_NET,
     output_dir=WORKDIR,
+    pretrained_checkpoint=STAGE2_CKPT,
     gene_subset=genes,
     gene_order_path=GENE_ORDER,
     accelerator="gpu",
@@ -233,9 +245,9 @@ plot_velocity_gene(str(stage2["stage2_csv"]), gene="INS2", output_path=f"{WORKDI
 
 关键配置
 --------
-- `PipelineConfig`: `gene_subset`、`gene_order_path`、`stage*_epochs`、`stage*_lr`、`val_fraction_stage*`（默认为 0，无验证集）、`future_tau`、`accelerator/devices/strategy`、`make_plot/plot_genes`；
-- `CellStageConfig`: `attention_output`、`attention_topk`；
-- `GeneStageConfig`: `future_positions`、`stage1_checkpoint`。
+- `PipelineConfig`: `gene_subset`、`gene_order_path`、`stage1_pretrained_checkpoint`、`stage2_pretrained_checkpoint`、`stage*_epochs`、`stage*_lr`、`val_fraction_stage*`（默认为 0，无验证集）、`future_tau`、`accelerator/devices/strategy`、`make_plot/plot_genes`；
+- `CellStageConfig`: `pretrained_checkpoint`、`attention_output`、`attention_topk`；
+- `GeneStageConfig`: `pretrained_checkpoint`、`future_positions`、`stage1_checkpoint`。
 
 输入格式
 --------

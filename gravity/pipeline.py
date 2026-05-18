@@ -67,6 +67,10 @@ class PipelineConfig:
         contrastive gene-wise stage are somewhat learning-rate sensitive; for
         reference-style runs we recommend keeping ``stage1_lr`` below ``1e-5``
         and tuning ``stage2_lr`` between ``1e-3`` and ``1e-5``.
+    stage1_pretrained_checkpoint, stage2_pretrained_checkpoint:
+        Optional checkpoints used for inference/export instead of training the
+        corresponding stage. Use these for checkpoint-based reference
+        reproduction.
     val_fraction_stage1, val_fraction_stage2:
         Fraction of data reserved for validation in each stage.
     accelerator, devices, strategy, precision, gradient_clip_val, num_workers:
@@ -94,6 +98,8 @@ class PipelineConfig:
     stage2_epochs: int = 6
     stage1_lr: float = 1e-6
     stage2_lr: float = 1e-4
+    stage1_pretrained_checkpoint: Optional[str] = None
+    stage2_pretrained_checkpoint: Optional[str] = None
     embedding_size: int = 16
     model_dimension: int = 16
     ffn_dimension: int = 16
@@ -190,6 +196,7 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Path]:
         output_dir=str(workdir),
         stage1_csv=config.stage1_csv_name,
         checkpoint_name=config.stage1_checkpoint_name,
+        pretrained_checkpoint=config.stage1_pretrained_checkpoint,
         attention_dir='attentions',
         gene_subset=effective_gene_subset,
         gene_order_path=config.gene_order_path,
@@ -260,6 +267,7 @@ def run_pipeline(config: PipelineConfig) -> Dict[str, Path]:
         output_dir=str(workdir),
         stage2_csv=config.stage2_csv_name,
         checkpoint_name=config.stage2_checkpoint_name,
+        pretrained_checkpoint=config.stage2_pretrained_checkpoint,
         gene_subset=effective_gene_subset,
         gene_order_path=config.gene_order_path,
         batch_size=config.batch_size,

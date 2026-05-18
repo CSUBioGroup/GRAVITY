@@ -402,7 +402,7 @@ def preprocess_counts(
     return output_path
 
 
-def load_cell_stage_dataset(middle_file: str, *, prior_path: str = './prior_data/network_mouse.zip', gene_list: Optional[Sequence[str]] = None, n_pos_neighbors = 30, n_neg_neighbors = 10) -> CustomDataset:
+def load_cell_stage_dataset(middle_file: str, *, prior_path: str = './prior_data/nichenet_mouse.zip', gene_list: Optional[Sequence[str]] = None, n_pos_neighbors = 30, n_neg_neighbors = 10) -> CustomDataset:
     """Instantiate the PyTorch dataset used for the cell-wise stage."""
 
     dataset = CustomDataset(middle_file, prior=prior_path, gene_select=gene_list, n_pos_neighbors=n_pos_neighbors, n_neg_neighbors=n_neg_neighbors)
@@ -413,7 +413,7 @@ def load_cell_stage_dataset(middle_file: str, *, prior_path: str = './prior_data
     return dataset
 
 
-def load_gene_stage_dataset(middle_file: str, *, prior_path: str = './prior_data/network_mouse.zip', future_positions: str = './final_positions_with_index_yixian.npy', gene_list: Optional[Sequence[str]] = None) -> CustomDatasetGeneWise:
+def load_gene_stage_dataset(middle_file: str, *, prior_path: str = './prior_data/nichenet_mouse.zip', future_positions: str = './final_positions_with_index_yixian.npy', gene_list: Optional[Sequence[str]] = None) -> CustomDatasetGeneWise:
     """Instantiate the PyTorch dataset used for the gene-wise refinement stage."""
 
     dataset = CustomDatasetGeneWise(middle_file, prior=prior_path, gene_select=gene_list, future_pos=future_positions)

@@ -67,7 +67,7 @@ class CellStageConfig:
 
     raw_counts: str
     middle_csv: str
-    prior_network: Optional[str] = './prior_data/network_mouse.zip'
+    prior_network: Optional[str] = './prior_data/nichenet_mouse.zip'
     output_dir: str = 'gravity_outputs'
     stage1_csv: str = 'stage1.csv'
     checkpoint_name: str = 'stage1.ckpt'

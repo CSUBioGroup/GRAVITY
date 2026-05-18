@@ -32,6 +32,35 @@ The CSV must include at least `cellID`, `gene_name`, `unsplice`, `splice`,
 `embedding1`, and `embedding2`; `clusters` is optional and is used for plot
 coloring and attention summaries.
 
+## Prior Networks
+
+The repository includes mouse and human prior network archives:
+
+```text
+prior_data/nichenet_mouse.zip
+prior_data/nichenet_human.zip
+```
+
+The pancreas demo uses the mouse archive by default. For human datasets, pass
+`prior_network="prior_data/nichenet_human.zip"` in `PipelineConfig` or set
+`GRAVITY_PRIOR_NET=prior_data/nichenet_human.zip` when running
+`gravity/smoke_test.py`.
+
+The bundled archives follow the prior-network processing described by CEFCON.
+They start from NicheNet's integrated gene interaction network, remove
+cell-cell ligand-receptor interactions, use the unweighted integrated network,
+and represent undirected edges as bidirectional directed edges. The human
+archive keeps human gene symbols, and the mouse archive uses one-to-one ENSEMBL
+ortholog mapping with ambiguous genes removed. GRAVITY stores the processed
+networks as zipped edge-list CSV files with `from`, `to`, and `edge_type`
+columns.
+
+Background links:
+
+- NicheNet: https://www.nature.com/articles/s41592-019-0667-5
+- CEFCON: https://www.nature.com/articles/s41467-023-44103-3
+- cellDancer input layout and pancreas demo: https://www.nature.com/articles/s41587-023-01728-5
+
 ## Pancreas Reference Files
 
 This repository includes small pretrained checkpoints for the pancreatic

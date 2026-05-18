@@ -59,7 +59,34 @@ https://drive.google.com/file/d/16hV9t66edOgjCmoBuEfekS3ijtL1fYNc/view?usp=shari
 data/PancreaticEndocrinogenesis_cell_type_u_s.csv
 ```
 
-仓库中已经包含该演示所需的先验网络和胰腺参考 checkpoint。
+仓库中已经包含该演示所需的 mouse 先验网络和胰腺参考 checkpoint。
+
+先验网络
+--------
+GRAVITY 提供两个物种对应的先验网络压缩包：
+
+```text
+prior_data/nichenet_mouse.zip
+prior_data/nichenet_human.zip
+```
+
+胰腺演示默认使用 `prior_data/nichenet_mouse.zip`。如果分析 human 数据，可在
+`PipelineConfig` 中设置 `prior_network="prior_data/nichenet_human.zip"`，
+或在运行 smoke test 时设置
+`GRAVITY_PRIOR_NET=prior_data/nichenet_human.zip`。
+
+这些压缩包按 CEFCON 描述的 prior-network 处理流程整理。起点是 NicheNet 的
+integrated gene interaction network，包含 ligand-receptor、intracellular
+signaling 和 gene regulatory interactions。GRAVITY 关注单细胞内部调控，因此
+去除了细胞间 ligand-receptor interactions；使用 unweighted integrated
+network；将 undirected edges 作为 bidirectional directed edges 处理。human
+版本保留 human gene symbols，mouse 版本通过 ENSEMBL one-to-one orthologs
+映射并去除有歧义的基因。仓库中以 zipped edge-list CSV 保存，列名为 `from`、
+`to` 和 `edge_type`。相关链接：
+
+- NicheNet: https://www.nature.com/articles/s41592-019-0667-5
+- CEFCON: https://www.nature.com/articles/s41467-023-44103-3
+- cellDancer 数据格式与胰腺演示: https://www.nature.com/articles/s41587-023-01728-5
 
 快速开始（端到端）
 -----------------
@@ -71,7 +98,7 @@ from gravity import PipelineConfig, run_pipeline
 cfg = PipelineConfig(
     raw_counts="data/PancreaticEndocrinogenesis_cell_type_u_s.csv",
     workdir="gravity_outputs_pancreas",
-    prior_network="prior_data/network_mouse.zip",
+    prior_network="prior_data/nichenet_mouse.zip",
     gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt",
     accelerator="gpu",
     devices=1,
@@ -151,7 +178,7 @@ from gravity.plotting.velocity import plot_velocity_cell, plot_velocity_gene
 
 RAW_COUNTS = "data/PancreaticEndocrinogenesis_cell_type_u_s.csv"
 WORKDIR = "gravity_outputs_pancreas"
-PRIOR_NET = "prior_data/network_mouse.zip"
+PRIOR_NET = "prior_data/nichenet_mouse.zip"
 GENE_ORDER = "data/pancreas/reference_checkpoints/pancreas_genes.txt"
 genes = resolve_gene_order(None, GENE_ORDER)
 
@@ -208,7 +235,9 @@ plot_velocity_gene(str(stage2["stage2_csv"]), gene="INS2", output_path=f"{WORKDI
 --------
 GRAVITY 参考 cellDancer 的长表计数存储形式。CSV 至少包含：`cellID`、
 `gene_name`、`unsplice`、`splice`、`embedding1`、`embedding2`；可选
-`clusters` 用于上色。先验压缩包 `prior_data/network_mouse.zip` 与原始格式保持一致。
+`clusters` 用于上色。先验网络应是 zipped CSV edge list，包含 `from` 和
+`to` gene 列；仓库已在 `prior_data/` 下提供 mouse 和 human 的
+NicheNet-derived 网络。
 大型原始计数表不直接存放在仓库中；pancreatic endocrinogenesis smoke test 默认使用的路径见 `data/README.md`。
 
 常见问题

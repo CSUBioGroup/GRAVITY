@@ -19,6 +19,7 @@ api/index
 - Clone the repository and follow the installation steps in the README.
 - Create a Python 3.10 or 3.11 virtual environment, then install the package in editable mode: `pip install -e .[plots]`.
 - Place the pancreas example CSV at `data/PancreaticEndocrinogenesis_cell_type_u_s.csv`, or set `GRAVITY_RAW_COUNTS` to another compatible cellDancer-style CSV.
+- Use `prior_data/nichenet_mouse.zip` for the pancreas or other mouse examples; switch to `prior_data/nichenet_human.zip` for human datasets.
 - Run one of the smoke tests under `gravity/smoke_test_*.py` to ensure your environment is GPU-ready.
 
 ## Tutorials

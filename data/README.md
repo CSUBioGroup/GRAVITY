@@ -86,7 +86,15 @@ The corresponding reference exports are named:
 ```text
 pancreas_stage1_reference.csv
 pancreas_stage2_reference.csv
+pancreas_attention_scores.h5ad
+pancreas_insulin_signaling_attention_activity.csv
 ```
 
-Those CSV exports are large and are intentionally not tracked in git. Treat
-them as pancreas reference results produced from the provided checkpoints.
+Those exports are large and are intentionally not tracked in git. Treat them as
+pancreas reference results produced from the provided checkpoints.
+`pancreas_insulin_signaling_attention_activity.csv` is a precomputed per-cell
+summary from raw stage-1 attention tensors. It is computed by summing attention
+weights between insulin signaling genes, restricted to regulator-target pairs
+present in the prior network. The pancreas reference notebook documents the
+formula for users who save per-cell attention matrices and want to recompute the
+table.

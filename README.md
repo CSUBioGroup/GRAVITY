@@ -209,6 +209,13 @@ large pancreas reference results and are intentionally not tracked in git.
 When reproducing the provided pancreas checkpoints, pass
 `gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt"` so
 the model and attention tensors use the checkpoint-matching gene index order.
+The downstream pancreas notebook also uses precomputed reference outputs under
+`data/pancreas/reference_outputs/`, including `pancreas_attention_scores.h5ad`
+and `pancreas_insulin_signaling_attention_activity.csv`. The insulin activity
+table is a per-cell summary computed from raw stage-1 attention tensors by
+summing insulin-signaling attention weights over prior-network edges; the
+notebook documents the formula for users who want to recompute it from saved
+per-cell attention matrices.
 
 Modular usage
 -------------

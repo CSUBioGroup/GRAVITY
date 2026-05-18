@@ -13,4 +13,5 @@ This section walks through the current GRAVITY workflows. Start by preparing a
 cellDancer-style long-format CSV, run the two-stage pancreas reference
 pipeline, inspect generated artefacts such as checkpoints, velocity plots, and
 TF attention tables, then use the pancreas reference notebook for downstream
-analysis examples.
+analysis examples, including a precomputed insulin signaling activity table with
+the attention-based scoring formula documented in the notebook.

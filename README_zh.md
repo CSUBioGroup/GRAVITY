@@ -163,6 +163,12 @@ data/pancreas/reference_checkpoints/pancreas_genes.txt
 复现已发布的胰腺 checkpoint 时，还需要传入
 `gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt"`；
 模型权重和 attention tensor 按 gene index 对齐，同一批基因但顺序不同并不等价。
+下游胰腺 notebook 还会读取 `data/pancreas/reference_outputs/` 下的预计算
+reference outputs，包括 `pancreas_attention_scores.h5ad` 和
+`pancreas_insulin_signaling_attention_activity.csv`。其中 insulin activity
+表是从 raw stage-1 per-cell attention tensors 计算得到的 per-cell summary：
+在 insulin signaling gene set 内，沿 prior-network edges 对 attention 权重求和。
+notebook 中写明了公式，方便用户在保存 per-cell attention matrix 后自行复算。
 
 模块化用法
 ----------

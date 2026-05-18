@@ -29,7 +29,8 @@ Head over to the [Tutorials](tutorials/index.md) section for:
 - preparing long-format CSV files from AnnData sources,
 - configuring and running the two-stage GRAVITY pipeline,
 - preserving checkpoint-compatible gene order with `gene_order_path`,
-- interpreting outputs such as TF attention matrices and velocity plots.
+- interpreting outputs such as TF attention matrices, pathway activity
+  summaries, and velocity plots.
 
 ## API Reference
 

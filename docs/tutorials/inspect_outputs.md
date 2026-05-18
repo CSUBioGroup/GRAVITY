@@ -22,6 +22,18 @@ tf_summary, tf_plots = rank_tf_scores(
 print(tf_summary.head())
 ```
 
+## Pathway activity from attention tensors
+
+The pancreas reference notebook reads
+`data/pancreas/reference_outputs/pancreas_insulin_signaling_attention_activity.csv`
+as a precomputed table for plotting. That table is not a separate model output;
+it is a downstream per-cell summary computed from raw stage-1 attention
+matrices. For each cell, the insulin signaling activity score is the sum of
+attention weights between insulin signaling genes, restricted to
+regulator-target pairs present in the prior network. If you save raw per-cell
+attention matrices during inference, use the same checkpoint gene order before
+indexing genes and writing the per-cell activity table.
+
 ## Velocity plots
 
 ```python

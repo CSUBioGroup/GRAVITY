@@ -2,8 +2,8 @@
 
 Large raw count tables are not stored directly in this repository. GRAVITY
 expects a cellDancer-style long-format CSV with one row per cell-gene pair.
-The pancreatic endocrinogenesis CSV is the real demo dataset for reviewers and
-tutorial users. Download it from:
+The pancreatic endocrinogenesis CSV is the real demo dataset for smoke tests
+and tutorials. Download it from:
 
 ```text
 https://drive.google.com/file/d/16hV9t66edOgjCmoBuEfekS3ijtL1fYNc/view?usp=sharing

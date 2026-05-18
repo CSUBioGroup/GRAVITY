@@ -49,6 +49,20 @@ pip install --index-url https://download.pytorch.org/whl/cu117 "torch==2.0.1+cu1
 pip install -e .
 ```
 
+System requirements and tested environment
+------------------------------------------
+- Operating systems: Linux is recommended for full GPU training; macOS can be
+  used for documentation and lightweight CPU checks.
+- Python: 3.10 or 3.11.
+- Core dependencies: version-pinned ranges are listed in `pyproject.toml`.
+- Tested training environment: Python 3.10, PyTorch 2.0.1, PyTorch Lightning
+  2.0.x, and a CUDA 11.7-compatible NVIDIA GPU.
+- Hardware: an NVIDIA GPU is recommended for the pancreas demo and full
+  training runs. CPU execution is supported by PyTorch Lightning but is
+  substantially slower.
+- Typical install time: a few minutes after the Python environment is created;
+  the main variable is the PyTorch/CUDA wheel download time.
+
 Demo dataset
 ------------
 The pancreatic endocrinogenesis CSV is the real demo dataset used by the smoke
@@ -103,6 +117,10 @@ python gravity/smoke_test.py
 The expected output is a printed dictionary of generated paths. The output
 directory should contain `combine.csv`, stage checkpoints, `future_positions.npy`,
 stage CSV files, attention exports, and velocity plots for the selected genes.
+Expected runtime depends on the GPU and epoch settings; the default pancreas
+demo is intended for a CUDA workstation and typically runs on the order of tens
+of minutes. For a shorter check, reduce `GRAVITY_STAGE1_EPOCHS` and
+`GRAVITY_STAGE2_EPOCHS` before running `gravity/smoke_test.py`.
 
 The unsupervised and contrastive objectives are moderately learning-rate
 sensitive. For reference-style runs, start with `stage1_lr < 1e-5` and tune
@@ -259,7 +277,7 @@ Development transparency
 Codex was used as an engineering assistant to help reorganize this repository
 into a reusable tool package, update documentation, and run implementation-level
 checks. The GRAVITY model design, biological analysis strategy, and computational
-methodology were developed by the authors; tool-assisted changes were reviewed
+methodology were developed by the authors; tool-assisted changes were checked
 and tested by the authors before release.
 
 Contributing & license

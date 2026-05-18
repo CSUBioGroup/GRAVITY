@@ -42,6 +42,11 @@ layout:
 python gravity/smoke_test.py
 ```
 
+Expected runtime depends on the GPU and epoch settings; the default pancreas
+demo is intended for a CUDA workstation and typically runs on the order of tens
+of minutes. For a shorter check, reduce `GRAVITY_STAGE1_EPOCHS` and
+`GRAVITY_STAGE2_EPOCHS`.
+
 Key tips:
 
 - Use unique `workdir` names per experiment to avoid overwriting checkpoints.

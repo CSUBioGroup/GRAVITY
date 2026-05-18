@@ -39,7 +39,7 @@ The [API Reference](api/index.md) lists major modules (`gravity.pipeline`, `grav
 Codex was used as an engineering assistant to help reorganize this repository
 into a reusable tool package, update documentation, and run implementation-level
 checks. The GRAVITY model design, biological analysis strategy, and computational
-methodology were developed by the authors; tool-assisted changes were reviewed
+methodology were developed by the authors; tool-assisted changes were checked
 and tested by the authors before release.
 
 ## Contributing

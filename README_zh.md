@@ -38,11 +38,25 @@ pip install --index-url https://download.pytorch.org/whl/cu117 "torch==2.0.1+cu1
 pip install -e .
 ```
 
+演示数据
+--------
+胰腺内分泌发生 CSV 是 smoke test 和教程使用的真实演示数据。下载地址：
+
+```text
+https://drive.google.com/file/d/16hV9t66edOgjCmoBuEfekS3ijtL1fYNc/view?usp=sharing
+```
+
+下载后保存为：
+
+```text
+data/PancreaticEndocrinogenesis_cell_type_u_s.csv
+```
+
+仓库中已经包含该演示所需的先验网络和胰腺参考 checkpoint。
+
 快速开始（端到端）
 -----------------
-请先将胰腺内分泌发生数据长表放到
-`data/PancreaticEndocrinogenesis_cell_type_u_s.csv`，或把 `raw_counts`
-改成自己的兼容 CSV 路径。
+将演示 CSV 放到 `data/PancreaticEndocrinogenesis_cell_type_u_s.csv` 后运行：
 
 ```python
 from gravity import PipelineConfig, run_pipeline
@@ -65,6 +79,16 @@ cfg = PipelineConfig(
 outputs = run_pipeline(cfg)
 print(outputs)
 ```
+
+也可以直接运行脚本：
+
+```bash
+python gravity/smoke_test.py
+```
+
+预期输出是一个打印出来的路径字典。输出目录中应包含 `combine.csv`、
+stage checkpoints、`future_positions.npy`、stage CSV、attention 导出文件，
+以及所选基因的 velocity plots。
 
 无监督和对比学习目标对学习率略敏感。参考运行建议从
 `stage1_lr < 1e-5` 开始，`stage2_lr` 通常在 `1e-3` 到 `1e-5`

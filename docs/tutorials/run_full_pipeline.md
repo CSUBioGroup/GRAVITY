@@ -1,8 +1,15 @@
 # Run the GRAVITY Pipeline
 
-Once your cellDancer-style CSV is ready, run the two-stage pipeline via
-`PipelineConfig` and `run_pipeline`. The example below uses the pancreas
-reference layout used by the smoke test.
+The pancreatic endocrinogenesis CSV is the real demo dataset used by the smoke
+test and tutorials. Download it from:
+
+```text
+https://drive.google.com/file/d/16hV9t66edOgjCmoBuEfekS3ijtL1fYNc/view?usp=sharing
+```
+
+Save it as `data/PancreaticEndocrinogenesis_cell_type_u_s.csv`, then run the
+two-stage pipeline via `PipelineConfig` and `run_pipeline`. The example below
+uses the same pancreas reference layout as the smoke test.
 
 ```python
 from gravity import PipelineConfig, run_pipeline
@@ -24,6 +31,15 @@ cfg = PipelineConfig(
 )
 outputs = run_pipeline(cfg)
 print(outputs)
+```
+
+The expected output is a dictionary containing paths to `combine.csv`, stage
+checkpoints, `future_positions.npy`, stage CSV files, attention exports, and
+velocity plots for the selected genes. The scripted smoke test uses the same
+layout:
+
+```bash
+python gravity/smoke_test.py
 ```
 
 Key tips:

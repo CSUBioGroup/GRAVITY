@@ -49,11 +49,28 @@ pip install --index-url https://download.pytorch.org/whl/cu117 "torch==2.0.1+cu1
 pip install -e .
 ```
 
+Demo dataset
+------------
+The pancreatic endocrinogenesis CSV is the real demo dataset used by the smoke
+test and tutorials. Download it from:
+
+```text
+https://drive.google.com/file/d/16hV9t66edOgjCmoBuEfekS3ijtL1fYNc/view?usp=sharing
+```
+
+Save the file as:
+
+```text
+data/PancreaticEndocrinogenesis_cell_type_u_s.csv
+```
+
+The repository already includes the matching prior network and pancreas
+reference checkpoints needed by the demo.
+
 Quickstart (end‑to‑end)
 -----------------------
-Place the pancreatic endocrinogenesis long-format count table at
-`data/PancreaticEndocrinogenesis_cell_type_u_s.csv` first, or point
-`raw_counts` to another compatible file.
+After placing the demo CSV at
+`data/PancreaticEndocrinogenesis_cell_type_u_s.csv`, run:
 
 ```python
 from gravity import PipelineConfig, run_pipeline
@@ -76,6 +93,16 @@ cfg = PipelineConfig(
 outputs = run_pipeline(cfg)
 print(outputs)
 ```
+
+For a scripted run, use:
+
+```bash
+python gravity/smoke_test.py
+```
+
+The expected output is a printed dictionary of generated paths. The output
+directory should contain `combine.csv`, stage checkpoints, `future_positions.npy`,
+stage CSV files, attention exports, and velocity plots for the selected genes.
 
 The unsupervised and contrastive objectives are moderately learning-rate
 sensitive. For reference-style runs, start with `stage1_lr < 1e-5` and tune

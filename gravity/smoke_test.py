@@ -13,7 +13,7 @@ from gravity import PipelineConfig, run_pipeline
 
 
 RAW_COUNTS = os.environ.get("GRAVITY_RAW_COUNTS", "data/PancreaticEndocrinogenesis_cell_type_u_s.csv")
-PRIOR_NET = os.environ.get("GRAVITY_PRIOR_NET", "prior_data/network_mouse.zip")
+PRIOR_NET = os.environ.get("GRAVITY_PRIOR_NET", "prior_data/nichenet_mouse.zip")
 WORKDIR = os.environ.get("GRAVITY_WORKDIR", "gravity_outputs_pancreas")
 GENE_LIST = [
     gene.strip()

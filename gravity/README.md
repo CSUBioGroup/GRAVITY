@@ -49,11 +49,79 @@ pip install --index-url https://download.pytorch.org/whl/cu117 "torch==2.0.1+cu1
 pip install -e .
 ```
 
+System requirements and tested environment
+------------------------------------------
+- Operating systems: Linux is recommended for full GPU training; macOS can be
+  used for documentation and lightweight CPU checks.
+- Python: 3.10 or 3.11.
+- Core dependencies: version-pinned ranges are listed in `pyproject.toml`.
+- Tested training environment: Python 3.10, PyTorch 2.0.1, PyTorch Lightning
+  2.0.x, and a CUDA 11.7-compatible NVIDIA GPU.
+- Hardware: an NVIDIA GPU is recommended for the pancreas demo and full
+  training runs. CPU execution is supported by PyTorch Lightning but is
+  substantially slower.
+- Typical install time: a few minutes after the Python environment is created;
+  the main variable is the PyTorch/CUDA wheel download time.
+
+Demo dataset
+------------
+The pancreatic endocrinogenesis CSV is the real demo dataset used by the smoke
+test and tutorials. It is the preprocessed input file linked from cellDancer's
+pancreatic endocrinogenesis case study:
+
+```text
+https://guangyuwanglab2021.github.io/cellDancer_website/notebooks/case_study_pancreas.html
+```
+
+Download the CSV archive from:
+
+```text
+https://drive.google.com/file/d/16hV9t66edOgjCmoBuEfekS3ijtL1fYNc/view?usp=sharing
+```
+
+Save the file as:
+
+```text
+data/PancreaticEndocrinogenesis_cell_type_u_s.csv
+```
+
+The repository already includes the matching mouse prior network and pancreas
+reference checkpoints needed by the demo.
+
+Prior networks
+--------------
+GRAVITY ships two species-specific prior network archives:
+
+```text
+prior_data/nichenet_mouse.zip
+prior_data/nichenet_human.zip
+```
+
+The pancreas demo uses `prior_data/nichenet_mouse.zip` by default. For human
+datasets, pass `prior_network="prior_data/nichenet_human.zip"` or set
+`GRAVITY_PRIOR_NET=prior_data/nichenet_human.zip` when running the smoke test.
+
+These archives follow the prior-network processing described by CEFCON. The
+starting point is NicheNet's integrated gene interaction network, which combines
+ligand-receptor, intracellular signaling, and gene regulatory interactions from
+public mouse and human resources. For intracellular GRAVITY modeling, cell-cell
+ligand-receptor interactions are removed; the unweighted integrated network is
+used; undirected edges are represented as bidirectional directed edges. The
+human archive keeps human gene symbols, and the mouse archive uses one-to-one
+ENSEMBL ortholog mapping with ambiguous genes removed. GRAVITY stores the
+processed networks as zipped edge-list CSV files with `from`, `to`, and
+`edge_type` columns.
+
+Background links:
+
+- NicheNet: https://www.nature.com/articles/s41592-019-0667-5
+- CEFCON: https://www.nature.com/articles/s41467-023-44103-3
+- cellDancer input layout and pancreas demo: https://www.nature.com/articles/s41587-023-01728-5
+
 Quickstart (end‑to‑end)
 -----------------------
-Place the pancreatic endocrinogenesis long-format count table at
-`data/PancreaticEndocrinogenesis_cell_type_u_s.csv` first, or point
-`raw_counts` to another compatible file.
+After placing the demo CSV at
+`data/PancreaticEndocrinogenesis_cell_type_u_s.csv`, run:
 
 ```python
 from gravity import PipelineConfig, run_pipeline
@@ -61,7 +129,7 @@ from gravity import PipelineConfig, run_pipeline
 cfg = PipelineConfig(
     raw_counts="data/PancreaticEndocrinogenesis_cell_type_u_s.csv",
     workdir="gravity_outputs_pancreas",
-    prior_network="prior_data/network_mouse.zip",
+    prior_network="prior_data/nichenet_mouse.zip",
     gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt",
     accelerator="gpu",
     devices=1,
@@ -76,6 +144,21 @@ cfg = PipelineConfig(
 outputs = run_pipeline(cfg)
 print(outputs)
 ```
+
+For a scripted run, use:
+
+```bash
+python gravity/smoke_test.py
+```
+
+The expected output is a printed dictionary of generated paths. The output
+directory should contain `combine.csv`, stage checkpoints, `future_positions.npy`,
+stage CSV files, attention exports, and velocity plots for the selected genes.
+Expected runtime depends on the hardware and epoch settings. The complete
+pancreas demo is intended for a CUDA workstation and typically runs on the
+order of tens of minutes. A CPU-only desktop is not the recommended target for
+the full demo; for a desktop sanity check, reduce `GRAVITY_STAGE1_EPOCHS` and
+`GRAVITY_STAGE2_EPOCHS` before running `gravity/smoke_test.py`.
 
 The unsupervised and contrastive objectives are moderately learning-rate
 sensitive. For reference-style runs, start with `stage1_lr < 1e-5` and tune
@@ -126,6 +209,13 @@ large pancreas reference results and are intentionally not tracked in git.
 When reproducing the provided pancreas checkpoints, pass
 `gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt"` so
 the model and attention tensors use the checkpoint-matching gene index order.
+The downstream pancreas notebook also uses precomputed reference outputs under
+`data/pancreas/reference_outputs/`, including `pancreas_attention_scores.h5ad`
+and `pancreas_insulin_signaling_attention_activity.csv`. The insulin activity
+table is a per-cell summary computed from raw stage-1 attention tensors by
+summing insulin-signaling attention weights over prior-network edges; the
+notebook documents the formula for users who want to recompute it from saved
+per-cell attention matrices.
 
 Modular usage
 -------------
@@ -141,7 +231,7 @@ from gravity.plotting.velocity import plot_velocity_cell, plot_velocity_gene
 
 RAW_COUNTS = "data/PancreaticEndocrinogenesis_cell_type_u_s.csv"
 WORKDIR = "gravity_outputs_pancreas"
-PRIOR_NET = "prior_data/network_mouse.zip"
+PRIOR_NET = "prior_data/nichenet_mouse.zip"
 GENE_ORDER = "data/pancreas/reference_checkpoints/pancreas_genes.txt"
 genes = resolve_gene_order(None, GENE_ORDER)
 
@@ -215,8 +305,9 @@ Inputs and formats
 GRAVITY follows the cellDancer-style long-format count table convention. The
 CSV must include at least `cellID`, `gene_name`, `unsplice`, `splice`,
 `embedding1`, and `embedding2`. The optional column `clusters` is used for
-coloring in plots and summary tables. Prior network archive
-`prior_data/network_mouse.zip` should match the original GRAVITY prior format.
+coloring in plots and summary tables. Prior network archives should be zipped
+CSV edge lists with `from` and `to` gene columns; the bundled mouse and human
+NicheNet-derived networks are available under `prior_data/`.
 Large raw count tables are kept out of the repository; see `data/README.md` for
 the expected path used by the pancreatic endocrinogenesis smoke test.
 
@@ -232,7 +323,7 @@ Development transparency
 Codex was used as an engineering assistant to help reorganize this repository
 into a reusable tool package, update documentation, and run implementation-level
 checks. The GRAVITY model design, biological analysis strategy, and computational
-methodology were developed by the authors; tool-assisted changes were reviewed
+methodology were developed by the authors; tool-assisted changes were checked
 and tested by the authors before release.
 
 Contributing & license

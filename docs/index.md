@@ -19,6 +19,7 @@ api/index
 - Clone the repository and follow the installation steps in the README.
 - Create a Python 3.10 or 3.11 virtual environment, then install the package in editable mode: `pip install -e .[plots]`.
 - Place the pancreas example CSV at `data/PancreaticEndocrinogenesis_cell_type_u_s.csv`, or set `GRAVITY_RAW_COUNTS` to another compatible cellDancer-style CSV.
+- Use `prior_data/nichenet_mouse.zip` for the pancreas or other mouse examples; switch to `prior_data/nichenet_human.zip` for human datasets.
 - Run one of the smoke tests under `gravity/smoke_test_*.py` to ensure your environment is GPU-ready.
 
 ## Tutorials
@@ -28,7 +29,8 @@ Head over to the [Tutorials](tutorials/index.md) section for:
 - preparing long-format CSV files from AnnData sources,
 - configuring and running the two-stage GRAVITY pipeline,
 - preserving checkpoint-compatible gene order with `gene_order_path`,
-- interpreting outputs such as TF attention matrices and velocity plots.
+- interpreting outputs such as TF attention matrices, pathway activity
+  summaries, and velocity plots.
 
 ## API Reference
 
@@ -39,7 +41,7 @@ The [API Reference](api/index.md) lists major modules (`gravity.pipeline`, `grav
 Codex was used as an engineering assistant to help reorganize this repository
 into a reusable tool package, update documentation, and run implementation-level
 checks. The GRAVITY model design, biological analysis strategy, and computational
-methodology were developed by the authors; tool-assisted changes were reviewed
+methodology were developed by the authors; tool-assisted changes were checked
 and tested by the authors before release.
 
 ## Contributing

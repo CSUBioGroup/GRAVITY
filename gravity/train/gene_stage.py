@@ -70,7 +70,7 @@ class GeneStageConfig:
     middle_csv: str
     stage1_checkpoint: str
     future_positions: str
-    prior_network: Optional[str] = './prior_data/network_mouse.zip'
+    prior_network: Optional[str] = './prior_data/nichenet_mouse.zip'
     output_dir: str = 'gravity_outputs'
     stage2_csv: str = 'stage2.csv'
     checkpoint_name: str = 'stage2.ckpt'

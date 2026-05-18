@@ -80,7 +80,7 @@ class PreprocessDataset(Dataset):
 class CustomDataset(Dataset):
     """Dataset consumed by the cell-wise training stage."""
 
-    def __init__(self, csv_file: str, prior: str = './prior_data/network_mouse.zip', gene_select: Optional[Sequence[str]] = None, n_pos_neighbors: int = 30, n_neg_neighbors: int = 10):
+    def __init__(self, csv_file: str, prior: str = './prior_data/nichenet_mouse.zip', gene_select: Optional[Sequence[str]] = None, n_pos_neighbors: int = 30, n_neg_neighbors: int = 10):
         csv_path = resolve_path(csv_file)
         data = pd.read_csv(csv_path, index_col=None)
         if gene_select is not None:
@@ -193,7 +193,7 @@ class CustomDataset(Dataset):
 class CustomDatasetGeneWise(Dataset):
     """Dataset consumed by the gene-wise refinement stage."""
 
-    def __init__(self, csv_file: str, prior: str = './prior_data/network_mouse.zip', gene_select: Optional[Sequence[str]] = None, future_pos: str = './final_positions_with_index_yixian.npy'):
+    def __init__(self, csv_file: str, prior: str = './prior_data/nichenet_mouse.zip', gene_select: Optional[Sequence[str]] = None, future_pos: str = './final_positions_with_index_yixian.npy'):
         csv_path = resolve_path(csv_file)
         data = pd.read_csv(csv_path, index_col=None)
         if gene_select is not None:

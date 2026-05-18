@@ -84,7 +84,7 @@ class PipelineConfig:
 
     raw_counts: str
     workdir: str = 'gravity_outputs'
-    prior_network: Optional[str] = './prior_data/network_mouse.zip'
+    prior_network: Optional[str] = './prior_data/nichenet_mouse.zip'
     gene_subset: Optional[Sequence[str]] = None
     gene_order_path: Optional[str] = None
     batch_size: int = 16

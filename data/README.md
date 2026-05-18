@@ -46,4 +46,4 @@ pancreas_stage2_reference.csv
 ```
 
 Those CSV exports are large and are intentionally not tracked in git. Treat
-them as pancreas reference results produced from the published checkpoints.
+them as pancreas reference results produced from the provided checkpoints.

@@ -34,7 +34,7 @@ index order used during their original run. If you plan to reuse a checkpoint,
 keep the checkpoint's `genes.txt` file and pass it later as `gene_order_path`
 when running the pipeline.
 
-For the published pancreas reference checkpoints, use:
+For the provided pancreas reference checkpoints, use:
 
 ```python
 gene_order_path = "data/pancreas/reference_checkpoints/pancreas_genes.txt"

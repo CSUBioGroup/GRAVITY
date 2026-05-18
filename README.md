@@ -123,7 +123,7 @@ These checkpoints can be used directly as the pancreas stage-1 and stage-2
 weights. The matching reference exports are named
 `pancreas_stage1_reference.csv` and `pancreas_stage2_reference.csv`; they are
 large pancreas reference results and are intentionally not tracked in git.
-When reproducing the published pancreas checkpoints, pass
+When reproducing the provided pancreas checkpoints, pass
 `gene_order_path="data/pancreas/reference_checkpoints/pancreas_genes.txt"` so
 the model and attention tensors use the checkpoint-matching gene index order.
 

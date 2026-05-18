@@ -40,7 +40,14 @@ pip install -e .
 
 演示数据
 --------
-胰腺内分泌发生 CSV 是 smoke test 和教程使用的真实演示数据。下载地址：
+胰腺内分泌发生 CSV 是 smoke test 和教程使用的真实演示数据。该文件是
+cellDancer 胰腺内分泌发生案例教程中链接的预处理输入数据：
+
+```text
+https://guangyuwanglab2021.github.io/cellDancer_website/notebooks/case_study_pancreas.html
+```
+
+CSV 压缩包下载地址：
 
 ```text
 https://drive.google.com/file/d/16hV9t66edOgjCmoBuEfekS3ijtL1fYNc/view?usp=sharing

@@ -1,7 +1,14 @@
 # Run the GRAVITY Pipeline
 
 The pancreatic endocrinogenesis CSV is the real demo dataset used by the smoke
-test and tutorials. Download it from:
+test and tutorials. It is the preprocessed input file linked from cellDancer's
+pancreatic endocrinogenesis case study:
+
+```text
+https://guangyuwanglab2021.github.io/cellDancer_website/notebooks/case_study_pancreas.html
+```
+
+Download the CSV archive from:
 
 ```text
 https://drive.google.com/file/d/16hV9t66edOgjCmoBuEfekS3ijtL1fYNc/view?usp=sharing

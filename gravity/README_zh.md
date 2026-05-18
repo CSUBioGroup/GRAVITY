@@ -187,10 +187,6 @@ GRAVITY 参考 cellDancer 的长表计数存储形式。CSV 至少包含：`cell
 - 缺少可选依赖：绘图/采样可能自动禁用；
 - 日志：使用 `gravity.utils.log_verbose` 等工具。
 
-引用
-----
-如在研究中使用本包，请引用 GRAVITY 论文：“GRAVITY predicts RNA velocity and regulatory rewiring by dynamic regulatory mechanism-enhanced deep learning”。方法部分建议同时报告软件版本、运行环境和关键配置参数。
-
 贡献与许可
 ----------
 欢迎提交 Issue/PR（请附复现步骤与命令序列）。本软件包遵循 MIT 许可。

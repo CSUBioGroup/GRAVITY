@@ -235,13 +235,6 @@ checks. The GRAVITY model design, biological analysis strategy, and computationa
 methodology were developed by the authors; tool-assisted changes were reviewed
 and tested by the authors before release.
 
-Citing
-------
-If this package contributes to your research, please cite the GRAVITY paper:
-“GRAVITY predicts RNA velocity and regulatory rewiring by dynamic regulatory
-mechanism-enhanced deep learning.” Include version, environment details, and key
-configuration options in your methods section when possible.
-
 Contributing & license
 ----------------------
 Please open issues/PRs with reproduction steps and sample commands. This

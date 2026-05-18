@@ -124,9 +124,10 @@ python gravity/smoke_test.py
 The expected output is a printed dictionary of generated paths. The output
 directory should contain `combine.csv`, stage checkpoints, `future_positions.npy`,
 stage CSV files, attention exports, and velocity plots for the selected genes.
-Expected runtime depends on the GPU and epoch settings; the default pancreas
-demo is intended for a CUDA workstation and typically runs on the order of tens
-of minutes. For a shorter check, reduce `GRAVITY_STAGE1_EPOCHS` and
+Expected runtime depends on the hardware and epoch settings. The complete
+pancreas demo is intended for a CUDA workstation and typically runs on the
+order of tens of minutes. A CPU-only desktop is not the recommended target for
+the full demo; for a desktop sanity check, reduce `GRAVITY_STAGE1_EPOCHS` and
 `GRAVITY_STAGE2_EPOCHS` before running `gravity/smoke_test.py`.
 
 The unsupervised and contrastive objectives are moderately learning-rate
